@@ -2823,4 +2823,43 @@ function tableHandler()
 	showOneLiner (51);
 }
 
+function addCactiGraph ()
+{
+	assertUIntArg ('object_id');
+	assertUIntArg ('graph_id');
+	assertStringArg ('caption');
+
+	$object_id = $_REQUEST['port_id'];
+	$graph_id = $_REQUEST['graph_id'];
+	$caption = $_REQUEST['caption'];
+
+	if (addCactiGraphForObject ($_REQUEST['object_id'], $_REQUEST['graph_id'], $_REQUEST['caption']))
+		showSuccess ("Graph added successfully");
+	else
+		showError ("Graph add failed");
+}
+
+function delCactiGraph ()
+{
+	assertUIntArg ('graph_id');
+
+	$graph_id = $_REQUEST['graph_id'];
+
+	usePreparedDeleteBlade ('CactiGraph', array ('graph_id' => $graph_id));
+
+	showSuccess ("Graph deleted successfully");
+}
+
+function updateCactiGraph ()
+{
+	assertUIntArg ('object_id');
+	assertUIntArg ('graph_id');
+	assertStringArg ('caption');
+
+	$object_id = $_REQUEST['port_id'];
+	$graph_id = $_REQUEST['graph_id'];
+
+	showError ("Function not implemented");
+}
+
 ?>

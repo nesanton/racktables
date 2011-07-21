@@ -9484,4 +9484,40 @@ function renderIPv4AddressLog ()
 	finishPortlet();
 }
 
+function renderObjectCactiGraphs ($object_id)
+{
+	if (!extension_loaded ('curl'))
+	{
+		echo "<div class=msg_error>The PHP cURL extension is not loaded.  Cannot continue.</div>";
+	} elseif ("" == getConfigVar('CACTI_URL')) {
+		echo "<div class=msg_error>Cacti URL not configured.  Cannot continue.</div>";
+	} else {
+		startPortlet ('Cacti Graphs');
+		echo "<table cellspacing=\"0\" align=\"center\" width=\"50%\">";
+		echo "<tr><td>&nbsp;</td><th>Cacti Graph ID</th><th>Caption</th><td>&nbsp;</td></tr>\n";
+		printOpFormIntro ('add');
+		echo "<tr><td>";
+		printImageHREF ('create', 'Add new graph', TRUE);
+		echo "</td><td><input type=text name=graph_id tabindex=100></td><td><input type=text name=caption tabindex=101></td><td>";
+		printImageHREF ('create', 'Add new graph', TRUE, 101);
+		echo "</td></tr></form>";
+		echo "</table>";
+		echo "<br/><br/>";
+
+		echo "<table cellspacing=\"0\" cellpadding=\"10\" align=\"center\" width=\"50%\">";
+
+		$graphs = getCactiGraphsForObject($object_id);
+		foreach ($graphs as $x)
+		{
+			echo "<tr><td>";
+			echo "<img src=\"index.php?module=proxy&type=cactigraph&graph_id=" . $x['graph_id'] . "\" alt=\"Cacti Graph ID: " . $x['graph_id'] . "\"><br/>";
+			echo "<a href=\"" . makeHrefProcess (array ('op' => 'del', 'object_id'=> $object_id, 'graph_id' => $x['graph_id'])) . "\" onclick=\"javascript:return confirm('Are you sure you want to delete the graph?')\">" . getImageHREF ('destroy', 'Delete graph') . "</a>";
+			echo "&nbsp; &nbsp;" . $x['caption'];
+			echo "</td></tr>";
+		}
+		echo '</table>';
+		finishPortlet ();
+	}
+}
+
 ?>

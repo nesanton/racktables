@@ -187,6 +187,28 @@ try {
 		header ('Location: ' . $location);
 		// any other error requires no special handling and will be caught outside
 		break;
+	case 'proxy' == $_REQUEST['module']:
+		require_once 'inc/init.php';
+		require_once 'inc/proxy.php';
+		try
+		{
+			fixContext();
+			assertPermission();
+			genericAssertion ('type', 'string');
+			$file = proxyRequest($_REQUEST['type']);
+			if ($file)
+			{
+				header("Content-Type: {$file['type']}");
+				header("Content-Length: {$file['size']}");
+				echo $file['contents'];
+			}
+		}
+		catch (RTPermissionDenied $e)
+		{
+			ob_clean();
+			showError ('Operation not permitted');
+		}
+		break;
 	case 'popup' == $_REQUEST['module']:
 		require_once 'inc/popup.php';
 		require_once 'inc/init.php';

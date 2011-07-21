@@ -338,4 +338,13 @@ function triggerIPv4AddressLog ()
 	return '';
 }
 
+function triggerCactiGraphs ()
+{
+	assertUIntArg ('object_id');
+	if (getCactiHostIdForObject ($_REQUEST['object_id']))
+		return 'std';
+
+	return '';
+}
+
 ?>

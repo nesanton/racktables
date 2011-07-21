@@ -4922,4 +4922,38 @@ function getConfiguredQuickLinks()
 	return $ret;
 }
 
+function getCactiHostIdForObject ($object_id)
+{
+	$result = usePreparedSelectBlade ('SELECT uint_value FROM AttributeValue WHERE attr_id = 28 AND object_id = ?', array ($object_id));
+	$rows = $result->fetchAll (PDO::FETCH_ASSOC);	
+	if (count ($rows) != 1)
+		return NULL;
+
+	return $rows[0]['uint_value'];
+}
+
+function getCactiGraphsForObject ($object_id)
+{
+	if ($host_id = getCactiHostIdForObject($object_id))
+	{
+		$result = usePreparedSelectBlade ('SELECT graph_id, caption FROM CactiGraph WHERE host_id = ?', array ($host_id));
+		$rows = $result->fetchAll (PDO::FETCH_ASSOC);
+		return $rows;
+	}
+
+	return NULL;
+}
+
+function addCactiGraphForObject ($object_id, $graph_id, $caption = NULL)
+{
+	if ($host_id = getCactiHostIdForObject($object_id))
+	{
+		// Insert the graph here, if it doesn't already exist
+		usePreparedInsertBlade ('CactiGraph', array ('graph_id' => $graph_id, 'host_id' => $host_id, 'caption' => $caption));
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 ?>

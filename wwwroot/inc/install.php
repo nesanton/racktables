@@ -410,6 +410,14 @@ CREATE TABLE `CachedPVM` (
   CONSTRAINT `CachedPVM-FK-object_id` FOREIGN KEY (`object_id`) REFERENCES `Object` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE `CactiGraph` (
+  `graph_id` int(10) unsigned NOT NULL,
+  `host_id`  int(10) unsigned NOT NULL,
+  `caption`  char(255) DEFAULT NULL,
+  PRIMARY KEY  (`graph_id`),
+  KEY `host_id` (`host_id`)
+) ENGINE=InnoDB;
+
 CREATE TABLE `Chapter` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `sticky` enum('yes','no') default 'no',
@@ -957,13 +965,15 @@ INSERT INTO `Attribute` (`id`, `type`, `name`) VALUES
 (24,'string','SW warranty expiration'),
 (25,'string','UUID'),
 (26,'dict','Hypervisor'),
-(27,'uint','Height');
+(27,'uint','Height'),
+(28,'uint','Cacti Host ID');
 
 INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (2,1,NULL),
 (2,2,27),
 (2,3,NULL),
 (2,5,NULL),
+(2,28,NULL),
 (4,1,NULL),
 (4,2,11),
 (4,3,NULL),
@@ -974,6 +984,7 @@ INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (4,24,NULL),
 (4,25,NULL),
 (4,26,29),
+(4,28,NULL),
 (5,1,NULL),
 (5,2,18),
 (6,1,NULL),
@@ -991,6 +1002,7 @@ INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (7,21,NULL),
 (7,22,NULL),
 (7,24,NULL),
+(7,28,NULL),
 (8,1,NULL),
 (8,2,12),
 (8,3,NULL),
@@ -1004,6 +1016,7 @@ INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (8,21,NULL),
 (8,22,NULL),
 (8,24,NULL),
+(8,28,NULL),
 (9,6,NULL),
 (12,1,NULL),
 (12,3,NULL),
@@ -1036,10 +1049,12 @@ INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (798,21,NULL),
 (798,22,NULL),
 (798,24,NULL),
+(798,28,NULL),
 (965,1,NULL),
 (965,3,NULL),
 (965,2,25),
 (1055,2,26),
+(1055,28,NULL),
 (1323,1,NULL),
 (1323,2,28),
 (1323,3,NULL),
@@ -1061,6 +1076,7 @@ INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (1502,20,NULL),
 (1502,21,NULL),
 (1502,22,NULL),
+(1502,28,NULL),
 (1503,1,NULL),
 (1503,2,30),
 (1503,3,NULL),
@@ -1074,10 +1090,12 @@ INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (1503,21,NULL),
 (1503,22,NULL),
 (1503,24,NULL),
+(1503,28,NULL),
 (1504,3,NULL),
 (1504,4,13),
 (1504,14,NULL),
 (1504,24,NULL),
+(1504,28,NULL),
 (1505,14,NULL),
 (1506,14,NULL),
 (1506,17,NULL),
@@ -1430,6 +1448,9 @@ INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdef
 ('TELNET_OBJS_LISTSRC','none','string','yes','no','yes','Rackcode filter for telnet-managed objects'),
 ('SYNC_802Q_LISTSRC','','string','yes','no','no','List of VLAN switches sync is enabled on'),
 ('QUICK_LINK_PAGES','','string','yes','no','yes','List of pages to dislay in quick links'),
+('CACTI_URL','','string','yes','no','no','Cacti server base URL'),
+('CACTI_USERNAME','','string','yes','no','no','Cacti user account'),
+('CACTI_USERPASS','','string','yes','no','no','Cacti user password'),
 ('DB_VERSION','0.19.6','string','no','yes','no','Database version.');
 
 INSERT INTO `Script` VALUES ('RackCode','allow {\$userid_1}');
