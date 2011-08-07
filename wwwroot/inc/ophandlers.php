@@ -147,7 +147,7 @@ $opspec_list['object-cacti-add'] = array
 	'action' => 'INSERT',
 	'arglist' => array
 	(
-		array ('url_argname' => 'object_id' 'assertion' => 'uint'),
+		array ('url_argname' => 'object_id', 'assertion' => 'uint'),
 		array ('url_argname' => 'graph_id', 'assertion' => 'uint'),
 		array ('url_argname' => 'caption', 'assertion' => 'string0'),
 	),
@@ -158,7 +158,7 @@ $opspec_list['object-cacti-del'] = array
 	'action' => 'DELETE',
 	'arglist' => array
 	(
-		array ('url_argname' => 'object_id' 'assertion' => 'uint'),
+		array ('url_argname' => 'object_id', 'assertion' => 'uint'),
 		array ('url_argname' => 'graph_id', 'assertion' => 'uint'),
 	),
 );

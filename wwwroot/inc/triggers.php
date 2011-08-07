@@ -340,7 +340,7 @@ function triggerIPv4AddressLog ()
 
 function triggerCactiGraphs ()
 {
-	if (considerConfiguredConstraint (spotEntity ('object', getBypassValue()), $constraint))
+	if (considerConfiguredConstraint (spotEntity ('object', getBypassValue()), 'CACTI_LISTSRC'))
 		return 'std';
 	return '';
 }
