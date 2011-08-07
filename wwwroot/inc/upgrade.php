@@ -122,6 +122,7 @@ function getDBUpgradePath ($v1, $v2)
 		'0.19.4',
 		'0.19.5',
 		'0.19.6',
+		'0.19.7',
 		'0.20.0',
 	);
 	if (!in_array ($v1, $versionhistory) or !in_array ($v2, $versionhistory))
@@ -1258,6 +1259,7 @@ CREATE TABLE `CactiGraph` (
 			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_URL','','string','yes','no','no','Cacti server base URL')";
 			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_USERNAME','','string','yes','no','no','Cacti user account')";
 			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_USERPASS','','string','yes','no','no','Cacti user password')";
+			$query[] = "ALTER TABLE `IPv4LB` MODIFY `prio` varchar(255) DEFAULT NULL";
 			$query[] = "UPDATE Config SET varvalue = '0.20.0' WHERE varname = 'DB_VERSION'";
 			break;
 		default:

@@ -5309,7 +5309,7 @@ function renderSLBTriplets ($realm1, $realm2, $triplets, $display_count) {
 			echo "<textarea name=rsconfig rows=5 cols=70>${slb['rsconfig']}</textarea><br>RS config &uarr;";
 			$prio_id = "prio-$i";
 			$prio_value = htmlspecialchars($slb['prio']);
-			echo "<div style='float:left; margin-top:10px'><input name=prio type=text size=10 id=\"$prio_id\" value=\"$prio_value\"><label for=\"$prio_id\"> &larr; Priority (integer)</label></div>";
+			echo "<div style='float:left; margin-top:10px'><input name=prio type=text size=10 id=\"$prio_id\" value=\"$prio_value\"><label for=\"$prio_id\"> &larr; Priority</label></div>";
 			echo '</td></tr></form>';
 			$order = $nextorder[$order];
 		}
@@ -9162,7 +9162,7 @@ function formatAttributeValue ($record)
 				if (considerConfiguredConstraint (NULL, $cfgvar))
 					return "<a title='Open $proto session' class='mgmt-link' href='" . $proto . '://' . $record['a_value'] . "'>${record['a_value']}</a>";
 		}
-		return $record['a_value'];
+		return isset ($record['href']) ? "<a href=\"".$record['href']."\">${record['a_value']}</a>" : $record['a_value'];
 	}
 	else
 	{

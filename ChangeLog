@@ -7,12 +7,15 @@
 	update: support for mounting zero-U objects (#173, by Aaron Dummer)
 	update: create network and link to a VLAN at once
 	update: 8021Q switch autosync status is now managed by SYNC_802Q_LISTSRC config constraint
+	update: priority field of SLB triplet can now store any text, not only integers
+	update: 802.1q, LLDP and LivePorts features support for Force10 OSv8 switches
 	new feature: you can obtain who has made tag assignment, object's ports or IPv4 address changes by hovering cursor on these entities
 	new feature: adjustable quick links at the top of the page
 	new feature: integrated Cacti Graphs if you have the cURL extension for PHP loaded (#306, by Jonathan Thurman)
-0.19.7
+0.19.7 2011-07-31
 	update: add SNMP support for several more switches
 	update: improve consistency of stored attribute data (#449)
+	bugfix: wikilinks (#435, by Stefan Himpich)
 0.19.6 2011-07-02
 	bugfix: port linker was not working (#446)
 	bugfix: PHP warning messages appeared when searching (#443)
