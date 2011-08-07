@@ -141,6 +141,27 @@ $opspec_list['object-editrspvs-updLB'] = array
 		array ('url_argname' => 'vs_id', 'assertion' => 'uint'),
 	),
 );
+$opspec_list['object-cacti-add'] = array
+(
+	'table' => 'CactiGraph',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'object_id' 'assertion' => 'uint'),
+		array ('url_argname' => 'graph_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'caption', 'assertion' => 'string0'),
+	),
+);
+$opspec_list['object-cacti-del'] = array
+(
+	'table' => 'CactiGraph',
+	'action' => 'DELETE',
+	'arglist' => array
+	(
+		array ('url_argname' => 'object_id' 'assertion' => 'uint'),
+		array ('url_argname' => 'graph_id', 'assertion' => 'uint'),
+	),
+);
 $opspec_list['ipv4net-properties-editRange'] = array
 (
 	'table' => 'IPv4Network',
@@ -2821,45 +2842,6 @@ function tableHandler()
 		throw new InvalidArgException ('opspec/action', $opspec['action']);
 	}
 	showOneLiner (51);
-}
-
-function addCactiGraph ()
-{
-	assertUIntArg ('object_id');
-	assertUIntArg ('graph_id');
-	assertStringArg ('caption');
-
-	$object_id = $_REQUEST['port_id'];
-	$graph_id = $_REQUEST['graph_id'];
-	$caption = $_REQUEST['caption'];
-
-	if (addCactiGraphForObject ($_REQUEST['object_id'], $_REQUEST['graph_id'], $_REQUEST['caption']))
-		showSuccess ("Graph added successfully");
-	else
-		showError ("Graph add failed");
-}
-
-function delCactiGraph ()
-{
-	assertUIntArg ('graph_id');
-
-	$graph_id = $_REQUEST['graph_id'];
-
-	usePreparedDeleteBlade ('CactiGraph', array ('graph_id' => $graph_id));
-
-	showSuccess ("Graph deleted successfully");
-}
-
-function updateCactiGraph ()
-{
-	assertUIntArg ('object_id');
-	assertUIntArg ('graph_id');
-	assertStringArg ('caption');
-
-	$object_id = $_REQUEST['port_id'];
-	$graph_id = $_REQUEST['graph_id'];
-
-	showError ("Function not implemented");
 }
 
 ?>

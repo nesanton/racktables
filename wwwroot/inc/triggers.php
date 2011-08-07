@@ -340,10 +340,8 @@ function triggerIPv4AddressLog ()
 
 function triggerCactiGraphs ()
 {
-	assertUIntArg ('object_id');
-	if (getCactiHostIdForObject ($_REQUEST['object_id']))
+	if (considerConfiguredConstraint (spotEntity ('object', getBypassValue()), $constraint))
 		return 'std';
-
 	return '';
 }
 

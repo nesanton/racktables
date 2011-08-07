@@ -9497,7 +9497,7 @@ function renderObjectCactiGraphs ($object_id)
 	echo "<tr><td>&nbsp;</td><th>Cacti Graph ID</th><th>Caption</th><td>&nbsp;</td></tr>\n";
 	printOpFormIntro ('add');
 	echo "<tr><td>";
-	printImageHREF ('create', 'Add new graph', TRUE);
+	printImageHREF ('Attach', 'Link new graph', TRUE);
 	echo "</td><td><input type=text name=graph_id tabindex=100></td><td><input type=text name=caption tabindex=101></td><td>";
 	printImageHREF ('create', 'Add new graph', TRUE, 101);
 	echo "</td></tr></form>";
@@ -9506,20 +9506,18 @@ function renderObjectCactiGraphs ($object_id)
 
 	echo "<table cellspacing=\"0\" cellpadding=\"10\" align=\"center\" width=\"50%\">";
 
-	$graphs = getCactiGraphsForObject($object_id);
-	foreach ($graphs as $x)
+	foreach (getCactiGraphsForObject ($object_id) as $graph_id => $caption)
 	{
 		echo "<tr><td>";
-		echo "<a href=\"" . $cacti_url . "/graph.php?action=view&local_graph_id=" . $x['graph_id'] . "&rra_id=all\" target=\"_blank\">";
-		echo "<img src=\"index.php?module=proxy&type=cactigraph&graph_id=" . $x['graph_id'] . "\" alt=\"Cacti Graph ID: " . $x['graph_id'] . "\">";
+		echo "<a href='${cacti_url}/graph.php?action=view&local_graph_id=${graph_id}&rra_id=all' target='_blank'>";
+		echo "<img src='index.php?module=proxy&type=cactigraph&graph_id=${graph_id}' alt='Cacti Graph ID: ${graph_id}'>";
 		echo "</a><br/>";
-		echo "<a href=\"" . makeHrefProcess (array ('op' => 'del', 'object_id'=> $object_id, 'graph_id' => $x['graph_id'])) . "\" onclick=\"javascript:return confirm('Are you sure you want to delete the graph?')\">" . getImageHREF ('destroy', 'Delete graph') . "</a>";
-		echo "&nbsp; &nbsp;" . $x['caption'];
+		echo "<a href='" . makeHrefProcess (array ('op' => 'del', 'object_id'=> $object_id, 'graph_id' => $graph_id)) . "' onclick=\"javascript:return confirm('Are you sure you want to delete the graph?')\">" . getImageHREF ('Cut', 'Unlink graph') . "</a>";
+		echo "&nbsp; &nbsp;${caption}";
 		echo "</td></tr>";
 	}
 	echo '</table>';
 	finishPortlet ();
-
 }
 
 ?>

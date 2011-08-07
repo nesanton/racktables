@@ -1246,18 +1246,18 @@ CREATE VIEW `RackObject` AS SELECT * FROM `Object`
 			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('QUICK_LINK_PAGES','','string','yes','no','yes','List of pages to dislay in quick links')";
 			$query[] = "
 CREATE TABLE `CactiGraph` (
+  `object_id` int(10) unsigned NOT NULL,
   `graph_id` int(10) unsigned NOT NULL,
-  `host_id`  int(10) unsigned NOT NULL,
   `caption`  char(255) DEFAULT NULL,
   PRIMARY KEY  (`graph_id`),
-  KEY `host_id` (`host_id`)
+  KEY `CactiGraph-FK-object_id` (`object_id`),
+  CONSTRAINT `CactiGraph-FK-object_id` FOREIGN KEY (`object_id`) REFERENCES `Object` (`id`)
 ) ENGINE=InnoDB;
 ";
-			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_URL','','string','yes','no','no','Cacti server base URL')"
+			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_LISTSRC','false','string','yes','no','no','List of object with Cacti graphs')";
+			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_URL','','string','yes','no','no','Cacti server base URL')";
 			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_USERNAME','','string','yes','no','no','Cacti user account')";
 			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_USERPASS','','string','yes','no','no','Cacti user password')";
-			$query[] = "INSERT INTO `Attribute` (id, type, name) VALUES ('28', 'uint', 'Cacti Host ID')";
-			$query[] = "INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES (2,28,NULL),(4,28,NULL),(7,28,NULL),(8,28,NULL),(798,28,NULL),(1055,28,NULL),(1502,28,NULL),(1503,28,NULL),(1504,28,NULL)";
 			$query[] = "UPDATE Config SET varvalue = '0.20.0' WHERE varname = 'DB_VERSION'";
 			break;
 		default:
