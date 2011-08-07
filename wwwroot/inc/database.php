@@ -4928,16 +4928,4 @@ function getCactiGraphsForObject ($object_id)
 	return reindexById ($result->fetchAll (PDO::FETCH_ASSOC), 'graph_id');
 }
 
-function addCactiGraphForObject ($object_id, $graph_id, $caption = NULL)
-{
-	if ($host_id = getCactiHostIdForObject($object_id))
-	{
-		// Insert the graph here, if it doesn't already exist
-		usePreparedInsertBlade ('CactiGraph', array ('graph_id' => $graph_id, 'host_id' => $host_id, 'caption' => $caption));
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
 ?>
