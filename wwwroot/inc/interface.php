@@ -9510,7 +9510,7 @@ function renderObjectCactiGraphs ($object_id)
 	{
 		echo "<tr><td>";
 		echo "<a href='${cacti_url}/graph.php?action=view&local_graph_id=${graph_id}&rra_id=all' target='_blank'>";
-		echo "<img src='index.php?module=proxy&type=cactigraph&graph_id=${graph_id}' alt='Cacti Graph ID: ${graph_id}'>";
+		echo "<img src='index.php?module=image&img=cactigraph&object_id=${object_id}&graph_id=${graph_id}' alt='Cacti Graph ID: ${graph_id}'>";
 		echo "</a><br/>";
 		echo "<a href='" . makeHrefProcess (array ('op' => 'del', 'object_id'=> $object_id, 'graph_id' => $graph_id)) . "' onclick=\"javascript:return confirm('Are you sure you want to delete the graph?')\">" . getImageHREF ('Cut', 'Unlink graph') . "</a>";
 		echo "&nbsp; &nbsp;${graph['caption']}";
