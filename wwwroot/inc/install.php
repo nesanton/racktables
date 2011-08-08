@@ -418,8 +418,8 @@ CREATE TABLE `CactiGraph` (
   `graph_id` int(10) unsigned NOT NULL,
   `caption`  char(255) DEFAULT NULL,
   PRIMARY KEY  (`graph_id`),
-  KEY `CactiGraph-FK-object_id` (`object_id`),
-  CONSTRAINT `CactiGraph-FK-object_id` FOREIGN KEY (`object_id`) REFERENCES `Object` (`id`)
+  KEY `object_id` (`object_id`),
+  CONSTRAINT `CactiGraph-FK-object_id` FOREIGN KEY (`object_id`) REFERENCES `Object` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE `Chapter` (

@@ -1058,6 +1058,8 @@ function commitResetObject ($object_id = 0)
 	commitUpdateAttrValue ($object_id, 3, "");
 	// log history
 	recordObjectHistory ($object_id);
+	# Cacti graphs
+	usePreparedDeleteBlade ('CactiGraph', array ('object_id' => $object_id));
 }
 
 function commitDeleteRack($rack_id)

@@ -1251,8 +1251,8 @@ CREATE TABLE `CactiGraph` (
   `graph_id` int(10) unsigned NOT NULL,
   `caption`  char(255) DEFAULT NULL,
   PRIMARY KEY  (`graph_id`),
-  KEY `CactiGraph-FK-object_id` (`object_id`),
-  CONSTRAINT `CactiGraph-FK-object_id` FOREIGN KEY (`object_id`) REFERENCES `Object` (`id`)
+  KEY `object_id` (`object_id`),
+  CONSTRAINT `CactiGraph-FK-object_id` FOREIGN KEY (`object_id`) REFERENCES `Object` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 ";
 			$query[] = "INSERT INTO `Config` (varname, varvalue, vartype, emptyok, is_hidden, is_userdefined, description) VALUES ('CACTI_LISTSRC','false','string','yes','no','no','List of object with Cacti graphs')";
