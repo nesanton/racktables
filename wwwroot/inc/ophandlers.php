@@ -964,16 +964,17 @@ function updateChapter ()
 {
 	assertUIntArg ('chapter_no');
 	assertStringArg ('chapter_name');
+	global $sic;
 	usePreparedUpdateBlade
 	(
 		'Chapter',
 		array
 		(
-			'name' => $chapter_name,
+			'name' => $sic['chapter_name'],
 		),
 		array
 		(
-			'id' => $chapter_no,
+			'id' => $sic['chapter_no'],
 			'sticky' => 'no', // note this constant, it protects system chapters
 		)
 	);
