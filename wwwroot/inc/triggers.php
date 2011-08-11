@@ -340,6 +340,8 @@ function triggerIPv4AddressLog ()
 
 function triggerCactiGraphs ()
 {
+	if (count (getCactiGraphsForObject (getBypassValue())))
+		return 'std';
 	if (considerConfiguredConstraint (spotEntity ('object', getBypassValue()), 'CACTI_LISTSRC'))
 		return 'std';
 	return '';
