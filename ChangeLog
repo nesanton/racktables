@@ -1,5 +1,5 @@
 0.20.0
-	update: handle wide-band WDM transceivers and ER DWDM
+	update: handle wide-band WDM transceivers
 	update: 802.1q: config deploy to Cisco IOS switches is no more requiring 'switchport trunk encapsulation dot1q' pre-set
 	update: dismiss HNDP support
 	update: markup IPv6 subnet-router on request (by Jens Weibler)
@@ -9,12 +9,14 @@
 	update: 8021Q switch autosync status is now managed by SYNC_802Q_LISTSRC config constraint
 	update: priority field of SLB triplet can now store any text, not only integers
 	update: 802.1q, LLDP and LivePorts features support for Force10 OSv8 switches
+	update: LiveCDP, LiveLLDP: more accurate default interface type detection, ability to overwrite the transceiver set on port, checkboxes are set by default
 	new feature: you can obtain who has made tag assignment, object's ports or IPv4 address changes by hovering cursor on these entities
 	new feature: adjustable quick links at the top of the page
 	new feature: integrated Cacti Graphs if you have the cURL extension for PHP loaded (#306, by Jonathan Thurman)
 0.19.8
 	update: switch to InnoDB completely
 	bugfix: dictionary chapter rename did not work
+	update: ER DWDM channel grid
 0.19.7 2011-07-31
 	update: add SNMP support for several more switches
 	update: improve consistency of stored attribute data (#449)

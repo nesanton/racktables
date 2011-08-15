@@ -164,49 +164,28 @@ function init_config ()
 		echo "Error: failed to open $path_to_secret_php for writing";
 		return FALSE;
 	}
-	fwrite ($conf, "<?php\n/* This file has been generated automatically by RackTables installer.\n");
-	fwrite ($conf, " * you shouldn't normally edit it unless your database setup has changed.\n");
-	fwrite ($conf, " */\n");
+	fwrite ($conf, "<?php\n# This file has been generated automatically by RackTables installer.\n");
 	fwrite ($conf, "\$pdo_dsn = '${pdo_dsn}';\n");
 	fwrite ($conf, "\$db_username = '" . $_REQUEST['mysql_username'] . "';\n");
 	fwrite ($conf, "\$db_password = '" . $_REQUEST['mysql_password'] . "';\n\n");
 	fwrite ($conf, <<<ENDOFTEXT
-// Default setting is to authenticate users locally, but it is possible to
-// employ existing LDAP or Apache userbase. Uncommenting below two lines MAY
-// help in switching authentication to LDAP completely.
-// More info: http://sourceforge.net/apps/mediawiki/racktables/index.php?title=RackTablesAdminGuide
-#\$user_auth_src = 'ldap';
-#\$require_local_account = FALSE;
 
-// This is only necessary for 'ldap' authentication source
-\$LDAP_options = array
-(
-	'server' => 'some.server',
-	'domain' => 'some.domain',
-#	'search_dn' => 'ou=people,O=YourCompany',
-	'search_attr' => 'uid',
-#	'displayname_attrs' => 'givenname familyname',
+\$user_auth_src = 'database';
+\$require_local_account = TRUE;
+# Default setting is to authenticate users locally, but it is possible to
+# employ existing LDAP or Apache user accounts. Check RackTables wiki for
+# more information, in particular, this page for LDAP configuration details:
+# http://sourceforge.net/apps/mediawiki/racktables/index.php?title=LDAP
 
-// LDAP cache, values in seconds. Refresh, retry and expiry values are
-// treated exactly as those for DNS SOA record. Example values 300-15-600:
-// unconditionally remeber successful auth for 5 minutes, after that still
-// permit user access, but try to revalidate username and password on the
-// server (not more often, than once in 15 seconds). After 10 minutes of
-// unsuccessful retries give up and deny access, so someone goes to fix
-// LDAP server.
-//
-// Like in DNS, the following condition must be always met:
-// cache_retry <= cache_refresh <= cache_expiry
-//
-// To disable LDAP cache completely, set cache_refresh, cache_retry and
-// cache_expiry to 0.
-	'cache_refresh' => 300,
-	'cache_retry' => 15,
-	'cache_expiry' => 600,
-// Uncomment line below to work around ActiveDirectory+PHP problem to perform
-// search right in the base DN (not in one of OUs/CNs below).
-#	'options' => array (LDAP_OPT_PROTOCOL_VERSION => 3, LDAP_OPT_REFERRALS => 0),
-);
+#\$LDAP_options = array
+#(
+#	'server' => 'localhost',
+#	'domain' => 'example.com',
+#	'search_attr' => '',
+#	'search_dn' => '',
+#	'displayname_attrs' => '',
+#	'options' => array (LDAP_OPT_PROTOCOL_VERSION => 3),
+#);
 
 
 ENDOFTEXT
@@ -982,6 +961,34 @@ INSERT INTO `Attribute` (`id`, `type`, `name`) VALUES
 -- attributes are assigned IDs starting from 10000).
 (9999,'string','base MAC address');
 
+INSERT INTO `Chapter` (`id`, `sticky`, `name`) VALUES
+(1,'yes','ObjectType'),
+(2,'yes','PortOuterInterface'),
+(11,'no','server models'),
+(12,'no','network switch models'),
+(13,'no','server OS type'),
+(14,'no','switch OS type'),
+(16,'no','router OS type'),
+(17,'no','router models'),
+(18,'no','disk array models'),
+(19,'no','tape library models'),
+(21,'no','KVM switch models'),
+(23,'no','console models'),
+(24,'no','network security models'),
+(25,'no','wireless models'),
+(26,'no','fibre channel switch models'),
+(27,'no','PDU models'),
+(28,'no','Voice/video hardware'),
+(29,'no','Yes/No'),
+(30,'no','network chassis models'),
+(31,'no','server chassis models'),
+(32,'no','virtual switch models'),
+(33,'no','virtual switch OS type'),
+(34,'no','power supply chassis models'),
+(35,'no','power supply models'),
+-- Default chapters must have ID less than 10000, add them above this line.
+(9999,'no','multiplexer models');
+
 INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (2,1,NULL),
 (2,2,27),
@@ -1115,34 +1122,6 @@ INSERT INTO `AttributeMap` (`objtype_id`, `attr_id`, `chapter_id`) VALUES
 (1507,21,NULL),
 (1507,22,NULL),
 (1560,27,NULL);
-
-INSERT INTO `Chapter` (`id`, `sticky`, `name`) VALUES
-(1,'yes','ObjectType'),
-(2,'yes','PortOuterInterface'),
-(11,'no','server models'),
-(12,'no','network switch models'),
-(13,'no','server OS type'),
-(14,'no','switch OS type'),
-(16,'no','router OS type'),
-(17,'no','router models'),
-(18,'no','disk array models'),
-(19,'no','tape library models'),
-(21,'no','KVM switch models'),
-(23,'no','console models'),
-(24,'no','network security models'),
-(25,'no','wireless models'),
-(26,'no','fibre channel switch models'),
-(27,'no','PDU models'),
-(28,'no','Voice/video hardware'),
-(29,'no','Yes/No'),
-(30,'no','network chassis models'),
-(31,'no','server chassis models'),
-(32,'no','virtual switch models'),
-(33,'no','virtual switch OS type'),
-(34,'no','power supply chassis models'),
-(35,'no','power supply models'),
--- Default chapters must have ID less than 10000, add them above this line.
-(9999,'no','multiplexer models');
 
 INSERT INTO `PortInnerInterface` VALUES
 (1,'hardwired'),
