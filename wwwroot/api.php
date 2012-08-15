@@ -129,6 +129,22 @@ try {
 		break;
 
 
+        // get the location of an object
+        //    UI equivalent: /index.php?page=object&tab=rackspace&object_id=1013
+        //    UI handler: renderRackSpaceForObject()
+	case 'get_object_allocation':
+		require_once 'inc/init.php';
+
+                assertUIntArg ("object_id", TRUE);
+
+                $workingRacksData = getResidentRacksData ($_REQUEST['object_id']);
+
+                // TODO: possibly just pull out the atoms the server is in?
+                sendAPIResponse($workingRacksData);
+
+                break;
+
+
         // add one object
         //    UI equivalent: submitting form at /index.php?page=depot&tab=addmore
         //    UI handler: addMultipleObjects()
