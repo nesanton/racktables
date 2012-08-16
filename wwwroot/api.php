@@ -122,6 +122,35 @@ try {
                 $info = spotEntity ('object', $_REQUEST['object_id']);
                 amplifyCell ($info);
 
+                // optionally get attributes
+                if (isset ($_REQUEST['include_attrs']))
+                {
+
+                        // return the attributes in an array keyed on 'name', unless otherwise requested
+                        $key_attrs_on = 'name';
+                        if (isset ($_REQUEST['key_attrs_on']))
+                                $key_attrs_on = $_REQUEST['key_attrs_on'];
+
+                        $attrs = array();
+                        foreach (getAttrValues ( $_REQUEST['object_id'] ) as $record)
+                        {
+                          // check that the key exists for this record. we'll assume the default 'name' is always ok
+                          if (! isset ($record[ $key_attrs_on ]))
+                          {
+                                  throw new InvalidRequestArgException ('key_attrs_on',
+                                                                        $_REQUEST['key_attrs_on'],
+                                                                        'requested keying value not set for all attributes' );
+                          }
+
+                          // include only attributes with value set, unless requested via include_unset_attrs param
+                          // TODO: include_unset_attrs=0 currently shows the attributes...not intuitive
+                          if ( strlen ( $record['value'] ) or isset( $_REQUEST['include_unset_attrs'] ) )
+                                  $attrs[ $record[ $key_attrs_on ] ] = $record;
+                        }
+
+                        $info['attrs'] = $attrs;
+                }
+
                 // TODO: remove ip_bin data from response, or somehow encode in UTF-8 -safe format
                 //       note that get_ipaddress doesn't error, even though ip_bin key is present
 
