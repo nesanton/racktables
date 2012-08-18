@@ -166,10 +166,19 @@ try {
 
                 assertUIntArg ("object_id", TRUE);
 
-                $workingRacksData = getResidentRacksData ($_REQUEST['object_id']);
+                // get physical allocations
+                $racksData = getResidentRacksData ($_REQUEST['object_id']);
+
+                // get zero-U allocations
+                $zeroURacks = array();
+
+                $objectParents = getEntityRelatives('parents', 'object', $_REQUEST['object_id']);
+                foreach ($objectParents as $parentData)
+                  if ($parentData['entity_type'] == 'rack')
+                    array_push($zeroURacks, $parentData['entity_id']);
 
                 // TODO: possibly just pull out the atoms the server is in?
-                sendAPIResponse($workingRacksData);
+                sendAPIResponse( array( 'racks' => $racksData, 'zerou_racks' => $zeroURacks ) );
 
                 break;
 
