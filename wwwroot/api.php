@@ -410,7 +410,8 @@ try {
 }
 catch (Exception $e)
 {
-        error_log('exception handled by API');
+        error_log('exception handled by API. message: "' . $e->getMessage()
+                  . '" request URI: ' . $_SERVER['REQUEST_URI']);
 
 	ob_end_clean();
 
@@ -437,7 +438,7 @@ function sendAPIResponse ( $data, $metadata = NULL, $http_code = 200, $errors = 
         }
 
         header ('Content-Type: application/json; charset=UTF-8', FALSE, $http_code);
-        echo json_encode( $http_body );
+        echo json_encode( $http_body, JSON_FORCE_OBJECT );
         exit;
 }
 
