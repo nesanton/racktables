@@ -12,11 +12,23 @@ try {
 	switch ( $_REQUEST['method'] )
 	{
 
+        case 'get_status':
+		require_once 'inc/init.php';
+
+                require_once 'inc/config.php'; // for CODE_VERSION
+                global $configCache;
+
+                sendAPIResponse( array( 'site_conf'    => $configCache,
+                                        'code_version' => CODE_VERSION ) );
+
+                break;
+
+
         // get overall 8021q status
         //    UI equivalent: /index.php?page=8021q
         //    UI handler: renderVLANIPLinks()
         case 'get_8021q':
-		require_once 'inc/init.php';
+                require_once 'inc/init.php';
 
                 // get data for all VLAN domains: ID, name, VLAN count, switch count, ipv4net count, port count
                 $vdlist = getVLANDomainStats();
