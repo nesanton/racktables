@@ -206,22 +206,14 @@ try {
                 $object_asset_no = isset ( $_REQUEST['object_asset_no'] ) ? $_REQUEST['object_asset_no'] : '';
                 $taglist         = isset ( $_REQUEST['taglist'] )         ? $_REQUEST['taglist']         : array();
 
-                try
-                {
-                        $object_id = commitAddObject
-                        (
-                                $object_name,
-                                $object_label,
-                                $object_type_id,
-                                $object_asset_no,
-                                $taglist
-                        );
-                }
-                catch (RTDatabaseError $e)
-                {
-                        showError ("Error creating object '$object_name': " . $e->getMessage());
-                        continue;
-                }
+                $object_id = commitAddObject
+                (
+                        $object_name,
+                        $object_label,
+                        $object_type_id,
+                        $object_asset_no,
+                        $taglist
+                );
 
                 // redirect to the get_object URL for the new object
                 redirectUser($_SERVER['SCRIPT_NAME'] . "?method=get_object&object_id=$object_id");
