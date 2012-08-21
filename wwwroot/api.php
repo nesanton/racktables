@@ -353,6 +353,60 @@ try {
                 break;
 
 
+
+        // update an object's IP address
+        //    UI equivalent: /index.php?page=   ?module=redirect&page=object&tab=ip&op=add
+        //    UI handler: addIPAllocation()
+        case 'add_object_ip_allocation':
+		require_once 'inc/init.php';
+
+                $ip_bin = assertIPArg ('ip');
+                assertUIntArg ('object_id');
+
+                // default value for bond_name
+                if ( ! isset ($_REQUEST['bond_name']) )
+                        $_REQUEST['bond_name'] = '';
+
+                // default value for bond_type
+                // note on meanings of on 'bond_type' values:
+                //     'regular': Connected
+                //     'virtual': Loopback
+                //     'shared':  Shared
+                //     'router':  Router
+                if ( ! isset ($_REQUEST['bond_type']) )
+                        $_REQUEST['bond_type'] = 'regular';
+
+                // confirm that a network exists that matches the IP address
+                if  (getConfigVar ('IPV4_JAYWALK') != 'yes' and NULL === getIPAddressNetworkId ($ip_bin)) 
+                {
+                        throw new InvalidRequestArgException ('ip',
+                                                              $_REQUEST['ip'],
+                                                              'no network covering the requested IP address');
+                }
+
+                bindIPToObject ($ip_bin, $_REQUEST['object_id'], $_REQUEST['bond_name'], $_REQUEST['bond_type']);
+
+                redirectUser( $_SERVER['SCRIPT_NAME'] . '?method=get_object&object_id=' . $_REQUEST['object_id'] );
+                break;
+
+
+        // delete an IP address allocation for an object
+        //    UI equivalent: /index.php?
+        //    UI handler: delIPAllocation()
+        case 'delete_object_ip_allocation':
+                require_once 'inc/init.php';
+
+                $ip_bin = assertIPArg ('ip');
+                assertUIntArg ('object_id');
+
+                // TODO: raise exception if the IP doesn't exist
+                unbindIPFromObject ($ip_bin, $_REQUEST['object_id']);
+
+                redirectUser( $_SERVER['SCRIPT_NAME'] . '?method=get_object&object_id=' . $_REQUEST['object_id'] );
+                break;
+
+
+
         // delete an object
         //    UI equivalent: /index.php?module=redirect&op=deleteObject&page=depot&tab=addmore&object_id=993
         //                   (typically a link from edit object page)
