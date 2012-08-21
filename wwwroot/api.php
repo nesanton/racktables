@@ -224,7 +224,7 @@ try {
                 }
 
                 // redirect to the get_object URL for the new object
-                redirectUser("apiv0.php?method=get_object&object_id=$object_id");
+                redirectUser($_SERVER['SCRIPT_NAME'] . "?method=get_object&object_id=$object_id");
 		break;
 
 
@@ -345,7 +345,7 @@ try {
                 $dbxlink->commit();
 
                 // redirect to the get_object URL for the edited object
-                redirectUser( "apiv0.php?method=get_object&object_id=$object_id" );
+                redirectUser( $_SERVER['SCRIPT_NAME'] . "?method=get_object&object_id=$object_id" );
                 break;
 
 
@@ -366,7 +366,7 @@ try {
                         usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $rack_id));
 
                 // redirect to the depot method
-                redirectUser( "apiv0.php?method=get_depot" );
+                redirectUser( $_SERVER['SCRIPT_NAME'] . "?method=get_depot" );
                 break;
 
 
