@@ -512,19 +512,19 @@ function sendAPIResponse ( $data, $metadata = NULL, $http_code = 200, $errors = 
 // recursively encodes keys and values of a data strucure
 // only required if you're running a PHP version that doesn't
 // have json_encode's JSON_UNESCAPED_UNICODE option
-function recursive_utf8_encode ($obj) {
-        if (!is_array($obj)){
-                return utf8_encode($obj);
+function recursive_utf8_encode ($thing) {
+        if (!is_array($thing)){
+                return utf8_encode($thing);
         }
 
-        foreach ($obj as $k => $v) {
-                $new_k = utf8_encode_object($k);
-                $new_v = utf8_encode_object($v);
-                unset($obj[$k]);
-                $obj[$new_k] = $new_v;
+        foreach ($thing as $k => $v) {
+                $new_k = recursive_utf8_encode($k);
+                $new_v = recursive_utf8_encode($v);
+                unset($thing[$k]);
+                $thing[$new_k] = $new_v;
         }
 
-        return $thingy;
+        return $thing;
 }
 
 
