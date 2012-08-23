@@ -55,6 +55,21 @@ try {
                 break;
         
 
+        // get a single IPv4 network
+        //    UI equivalent: /index.php?page=ipv4net&id=8
+        //    UI handler: renderIPNetwork()
+        case 'get_ipv4network':
+	        require_once 'inc/init.php';
+
+                genericAssertion ('network_id', 'uint0');
+
+                $range = spotEntity ('ipv4net', $_REQUEST['network_id']);
+                loadIPAddrList ($range);
+
+                sendAPIResponse($range);
+                break;
+
+
         // get overall rackspace status
         //    UI equivalent: /index.php?page=rackspace
         //    UI handler: renderRackspace()
@@ -463,9 +478,9 @@ try {
         //    UI equivalent: /index.php?page=
         //    UI handler: ()
         //case '':
-	//	require_once 'inc/init.php';
-        //        header ('Content-Type: application/json; charset=UTF-8');
-        //        echo json_encode();
+	//        require_once 'inc/init.php';
+        //        ...do stuff...
+        //        sendAPIResponse();
         //        break;
 
 
