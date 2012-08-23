@@ -504,8 +504,27 @@ function sendAPIResponse ( $data, $metadata = NULL, $http_code = 200, $errors = 
         }
 
         header ('Content-Type: application/json; charset=UTF-8', FALSE, $http_code);
-        echo json_encode( $http_body, JSON_FORCE_OBJECT );
+        echo json_encode( recursive_utf8_encode($http_body), JSON_FORCE_OBJECT );
         exit;
+}
+
+
+// recursively encodes keys and values of a data strucure
+// only required if you're running a PHP version that doesn't
+// have json_encode's JSON_UNESCAPED_UNICODE option
+function recursive_utf8_encode ($obj) {
+        if (!is_array($obj)){
+                return utf8_encode($obj);
+        }
+
+        foreach ($obj as $k => $v) {
+                $new_k = utf8_encode_object($k);
+                $new_v = utf8_encode_object($v);
+                unset($obj[$k]);
+                $obj[$new_k] = $new_v;
+        }
+
+        return $thingy;
 }
 
 
