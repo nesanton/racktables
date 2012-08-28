@@ -422,6 +422,47 @@ try {
 
 
 
+        // add a port to an object
+        //    UI equivalent: /index.php?page=
+        //    UI handler: addPortForObject()
+        case 'add_port':
+	        require_once 'inc/init.php';
+
+                assertUIntArg ('object_id');
+                assertStringArg ('port_name', TRUE);
+                genericAssertion ('port_l2address', 'l2address0');
+                genericAssertion ('port_name', 'string');
+                commitAddPort
+                (
+                       $_REQUEST['object_id'],
+                       trim ($_REQUEST['port_name']),
+                       $_REQUEST['port_type_id'],
+                       trim ($_REQUEST['port_label']),
+                       trim ($_REQUEST['port_l2address'])
+                );
+
+                sendAPIResponse( array(), array( 'port added successfully' ) );
+                break;
+
+
+        // delete a port from an object
+        //    UI equivalent: /index.php?page=
+        //    UI handler: tableHandler()
+        case 'delete_port':
+	        require_once 'inc/init.php';
+
+                assertUIntArg ('object_id');
+                assertUIntArg ('port_id');
+
+                // TODO: add confirmation that there is such a port
+
+                usePreparedDeleteBlade ( 'Port', array ( 'id'        => $_REQUEST['port_id'],
+                                                         'object_id' => $_REQUEST['object_id'] ) );
+
+                sendAPIResponse( array(), array( 'port deleted successfully' ) );
+                break;
+
+
         // delete an object
         //    UI equivalent: /index.php?module=redirect&op=deleteObject&page=depot&tab=addmore&object_id=993
         //                   (typically a link from edit object page)
@@ -471,7 +512,6 @@ try {
                 
                 sendAPIResponse($words);
                 break;
-
 
 
         // <<DESCRIPTION>>
