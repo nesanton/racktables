@@ -432,7 +432,7 @@ try {
                 assertStringArg ('port_name', TRUE);
                 genericAssertion ('port_l2address', 'l2address0');
                 genericAssertion ('port_name', 'string');
-                commitAddPort
+                $new_port_id = commitAddPort
                 (
                        $_REQUEST['object_id'],
                        trim ($_REQUEST['port_name']),
@@ -441,7 +441,7 @@ try {
                        trim ($_REQUEST['port_l2address'])
                 );
 
-                sendAPIResponse( array(), array( 'port added successfully' ) );
+                sendAPIResponse( array(), array( 'message' => 'port added successfully', 'port_id' => $new_port_id ) );
                 break;
 
 
@@ -459,7 +459,7 @@ try {
                 usePreparedDeleteBlade ( 'Port', array ( 'id'        => $_REQUEST['port_id'],
                                                          'object_id' => $_REQUEST['object_id'] ) );
 
-                sendAPIResponse( array(), array( 'port deleted successfully' ) );
+                redirectUser( $_SERVER['SCRIPT_NAME'] . '?method=get_object&object_id=' . $_REQUEST['object_id'] );
                 break;
 
 
