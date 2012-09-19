@@ -210,6 +210,238 @@ try {
                 break;
 
 
+        // update where an object is installed in rackspace
+        //    UI equivalent: submitting form at /index.php?page=object&tab=rackspace&object_id=1013
+        //    UI handler: updateObjectAllocation()
+        case 'update_object_allocation':
+		require_once 'inc/init.php';
+
+                assertUIntArg ('object_id');
+
+                $object_id = $_REQUEST['object_id'];
+
+                global $remote_username, $loclist, $dbxlink;
+
+                $zeroURacksOld = array();
+                $allocationsOld = array();
+                $zeroURacksNew = array();
+                $allocationsNew = array();
+
+                $changecnt = 0;
+
+
+                // determine current zero-u allocations
+                foreach ( getEntityRelatives('parents', 'object', $object_id) as $parentData)
+                  if ($parentData['entity_type'] == 'rack')
+                    // this is exactly as in updateObjectAllocation(), but it means there can
+                    // only ever be one rack that an object is zero-U mounted in
+                    $zeroURacksOld[] = $parentData['entity_id'];
+
+
+                // determine current "normal" allocations
+                foreach ( array_keys( getResidentRacksData ( $object_id ) ) as $rack_id )
+                {
+                  $allocationsOld[] = $rack_id;
+                }
+
+
+                // get the object's new allocations from the request parameters (might not be any)
+                if ( isset( $_REQUEST['allocate_to'] ) ) {
+                  foreach ( $_REQUEST['allocate_to'] as $allocation )
+                  {
+                    // zero-U
+                    if ( preg_match( '/^zerou_(\d+)$/', $allocation, $matches ) ) {
+                      $rack_id = $matches[1];
+                      $zeroURacksNew[] = $rack_id;
+
+                    // "normal"
+                    } elseif ( preg_match( '/^atom_(\d+)_(\d+)_(\d+)$/', $allocation, $matches ) ) {
+                      $rack_id  = $matches[1];
+                      $position = $matches[2];
+                      $locidx   = $matches[3];
+
+                      $allocationsNew[$rack_id][$position][$locidx] = TRUE;
+
+                    // unexpected
+                    } else {
+                      throw new InvalidArgException ('allocate_to[]', $allocation,
+                                                     'invalid argument format, must be "zerou_<RACK>" or ' .
+                                                     '"atom_<RACK>_<UNIT>_<ATOM>"');
+
+                    }
+                  }
+                }
+
+                // validate new zero-U allocations (exception thrown if the rack doesn't exist)
+                foreach ( $zeroURacksNew as $rack_id )
+                  spotEntity('rack', $rack_id);
+
+                // validate new normal allocations
+                foreach ( $allocationsNew as $rack_id => $rack_alloc)
+                {
+                  $rackData = spotEntity ('rack', $rack_id);
+
+                  foreach ( $rack_alloc as $position => $pos_atoms )
+                  {
+                    foreach ( array_keys($pos_atoms) as $locidx )
+                    {
+                      if ( !isset( $loclist[$locidx] ) )
+                      {
+                        throw new InvalidArgException ('allocate_to[]', "atom_$rack_id_$position_$locidx",
+                                                       "invalid argument: $locidx is too deep/shallow for the rack");
+                      }
+
+                      if ( $position > $rackData['height'] or $position < 1 )
+                      {
+                        throw new InvalidArgException ('allocate_to[]', "atom_$rack_id_$position_$locidx",
+                                                       'invalid argument: rack is not that high/low');
+
+                      }
+                    }
+                  }
+                }
+
+
+                $workingRacksData = array();
+
+                // iterate over all involved racks (old and new) to get the detailed rack data
+                // also deal with zero-U allocations and de-allocations
+                foreach ( array_unique( array_merge( $allocationsOld, $zeroURacksNew, array_keys($allocationsNew) ) ) as $rack_id )
+                {
+                  if (!isset ($workingRacksData[$rack_id]))
+                  {
+                    $rackData = spotEntity ('rack', $rack_id);
+                    amplifyCell ($rackData);
+                    $workingRacksData[$rack_id] = $rackData;
+                  }
+
+                  // It's zero-U allocated to this rack in the API request, but not in the DB.  Mount it.
+                  if ( in_array($rack_id, $zeroURacksNew) && !in_array($rack_id, $zeroURacksOld) )
+                  {
+                    $changecnt++;
+                    error_log("zero-u mounting object id: $object_id from rack id: $rack_id");
+                    commitLinkEntities ('rack', $rack_id, 'object', $object_id);
+                  }
+
+                  // It's not zero-U allocated to this rack in the API request, but it is in the DB.  Unmount it.
+                  if ( !in_array($rack_id, $zeroURacksNew) && in_array($rack_id, $zeroURacksOld) )
+                  {
+                    $changecnt++;
+                    error_log("zero-u UN- mounting object id: $object_id from rack id: $rack_id");
+                    commitUnlinkEntities ('rack', $rack_id, 'object', $object_id);
+                  }
+                }
+
+                foreach ($workingRacksData as &$rd)
+                  applyObjectMountMask ($rd, $object_id);
+
+                // quick DB operation to save old data for logging
+                $oldMolecule = getMoleculeForObject ($object_id);
+
+                foreach ($workingRacksData as $rack_id => $rackData)
+                {
+                  $rackchanged = FALSE;
+                  $dbxlink->beginTransaction();
+
+                  for ($position = $rackData['height']; $position > 0; $position--)
+                  {
+                    for ($locidx = 0; $locidx < 3; $locidx++)
+                    {
+                      $atom = $loclist[$locidx];
+                      //error_log("considering $rack_id $position $locidx ($atom)");
+
+                      // atom can't be assigned to, skip.
+                      //     XXX: maybe should warn if attempted? (UI similarly ignores)
+                      if ($rackData[$position][$locidx]['enabled'] != TRUE)
+                        continue;
+
+                      // F => free, can be assigned to
+                      // T => taken, has something in it, can't be assigned to
+                      // U => unusable, has problems
+                      // A => set aside, can't be assigned to
+                      // W => ???
+                      $state = $rackData[$position][$locidx]['state'];
+
+                      // atom has something in it already. see if it's this object
+                      if ( $state == 'T' )
+                      {
+                        // some other object is there.
+                        //     TODO: should probably throw an exception
+                        if ( $rackData[$position][$locidx]['object_id'] != $object_id )
+                          continue;
+
+                        // this object was in there, and still is
+                        elseif ( isset( $allocationsNew[$rack_id][$position][$locidx] ) )
+                          continue;
+
+                        // this object was in there, but isn't anymore
+                        else
+                        {
+                          error_log("removing assignment for object id: $object_id ($rack_id, $position, $atom)");
+                          usePreparedDeleteBlade ('RackSpace', array ('rack_id' => $rack_id,
+                                                                      'unit_no' => $position,
+                                                                      'atom'    => $atom));
+                          $rackchanged = TRUE;
+                        }
+                      }
+
+                      // atom is free, can be assigned to
+                      elseif ( $state == 'F' )
+                      {
+                        // allocate the space to the object
+                        if ( isset( $allocationsNew[$rack_id][$position][$locidx] ) )
+                        {
+                          error_log("new assignment for object id: $object_id ($rack_id, $position, $atom)");
+                          usePreparedInsertBlade ('RackSpace', array ('rack_id'   => $rack_id,
+                                                                      'unit_no'   => $position,
+                                                                      'atom'      => $atom,
+                                                                      'state'     => 'T',
+                                                                      'object_id' => $object_id ));
+                          $rackchanged = TRUE;
+                        }
+                      }
+
+                    } // each atom
+                  } // each position
+
+
+                  if ($rackchanged)
+                  {
+                    // remove the thumbnail and commit the change
+                    usePreparedDeleteBlade ('RackThumbnail', array ('rack_id' => $rack_id));
+                    $dbxlink->commit();
+                    $changecnt++;
+                  }
+                  else
+                  {
+                    $dbxlink->rollBack();
+                  }
+                }
+
+
+                if ($changecnt)
+                {
+                  // Log a record.
+                  $newMolecule = getMoleculeForObject ($object_id);
+                  usePreparedInsertBlade
+                    (
+                     'MountOperation',
+                     array
+                     (
+                      'object_id' => $object_id,
+                      'old_molecule_id' => count ($oldMolecule) ? createMolecule ($oldMolecule) : NULL,
+                      'new_molecule_id' => count ($newMolecule) ? createMolecule ($newMolecule) : NULL,
+                      'user_name' => $remote_username,
+                      'comment' => 'updated via API',
+                      )
+                     );
+                }
+
+                // TODO: add metadata on updates that took place
+                redirectUser($_SERVER['SCRIPT_NAME'] . "?method=get_object_allocation&object_id=$object_id");
+                break;
+
+
         // add one object
         //    UI equivalent: submitting form at /index.php?page=depot&tab=addmore
         //    UI handler: addMultipleObjects()
