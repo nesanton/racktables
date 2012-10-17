@@ -695,6 +695,77 @@ try {
                 break;
 
 
+
+        // link a port
+        //    UI equivalent: /index.php?module=popup&helper=portlist&port=<<ID>>&in_rack=off&in_rack=on&remote_port=<<ID>>&cable=<<>>&do_link=Link
+        //    UI handler: ()
+        case 'link_port':
+	        require_once 'inc/init.php';
+
+                assertUIntArg ('port');
+                assertUIntArg ('remote_port');
+                assertStringArg ('cable', TRUE);
+                $port_info = getPortInfo ($_REQUEST['port']);
+                $remote_port_info = getPortInfo ($_REQUEST['remote_port']);
+                $POIFC = getPortOIFCompat();
+
+                // (removed the ability to specify remote and local port types)
+
+                $matches = FALSE;
+                foreach ($POIFC as $pair)
+                {
+                        if ($pair['type1'] == $port_info['oif_id'] && $pair['type2'] == $remote_port_info['oif_id'])
+                        {
+                                $matches = TRUE;
+                                break;
+                        }
+                }
+
+                if (!$matches)
+                {
+                        $port_type = $port_info['oif_name'];
+                        $remote_port_type = $remote_port_info['oif_name'];
+                        throw new InvalidArgException ('remote_port', $_REQUEST['remote_port'],
+                                                       "invalid argument: port types $port_type (local) and $remote_port_type (remote) can't be linked");
+                }
+
+                linkPorts ($port_info['id'], $remote_port_info['id'], $_REQUEST['cable']);
+
+                sendAPIResponse( array(), array( 'message' => 'ports linked successfully',
+                                                 'local_object' => $port_info['object_id'], 'remote_object' => $remote_port_info['object_id'],
+                                                 'local_port'   => $_REQUEST['port'],       'remote_port'   => $_REQUEST['remote_port'], ));
+                break;
+
+
+
+        // unlink a port
+        //    UI equivalent: /index.php?module=redirect&op=unlinkPort&port_id=<<ID>>&object_id=<<ID>>&page=object&tab=ports
+        //    UI handler: unlinkPort()
+        case 'unlink_port':
+	        require_once 'inc/init.php';
+
+                assertUIntArg ('port_id');
+                commitUnlinkPort ($_REQUEST['port_id']);
+
+                sendAPIResponse( array(), array( 'message' => 'port unlinked successfully', 'port_id' => $_REQUEST['port_id'] ) );
+                break;
+
+
+
+        // get data on a given port
+        //    UI equivalent: none
+        //    UI handler: none
+        case 'get_port':
+	        require_once 'inc/init.php';
+
+                assertUIntArg ('port_id');
+                $port_info = getPortInfo ($_REQUEST['port_id']);
+
+                sendAPIResponse($port_info);
+                break;
+
+
+
         // delete an object
         //    UI equivalent: /index.php?module=redirect&op=deleteObject&page=depot&tab=addmore&object_id=993
         //                   (typically a link from edit object page)
