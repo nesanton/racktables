@@ -39,6 +39,26 @@ try {
                 break;
 
 
+        // gets user-defined tags as a list
+        //    UI equivalent: none
+        //    UI handler: none
+        case 'get_taglist':
+	        require_once 'inc/init.php';
+                // just display the global
+                sendAPIResponse($taglist);
+                break;
+
+
+        // gets user-defined tags as a tree
+        //    UI equivalent: /index.php?page=tagtree&tab=default
+        //    UI handler: none
+        case 'get_tagtree':
+	        require_once 'inc/init.php';
+                // just display the global
+                sendAPIResponse($tagtree);
+                break;
+
+
         // get overall IPv4 space
         //    UI equivalent: /index.php?page=ipv4space
         //    UI handler: renderIPSpace() (realm == 'ipv4net')
