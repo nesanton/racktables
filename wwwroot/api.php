@@ -620,6 +620,21 @@ try {
                 break;
 
 
+        // update user-defined tags for an object
+        //    UI equivalent: /index.php?module=redirect&page=tagtree&tab=edit&op=createTag
+        //    UI handler: saveEntityTags()
+        case 'update_object_tags':
+	        require_once 'inc/init.php';
+
+                genericAssertion ('object_id', 'uint0');
+
+                $tags = isset ($_REQUEST['taglist']) ? $_REQUEST['taglist'] : array();
+                $num_tags = count($tags);
+                rebuildTagChainForEntity ('object', $_REQUEST['object_id'], buildTagChainFromIds ($tags), TRUE);
+
+                sendAPIResponse( array(), array( 'message' => 'updated tags successfully', 'object_id' => $_REQUEST['object_id'], 'num_tags' => $num_tags ) );
+                break;
+
 
         // update an object's IP address
         //    UI equivalent: /index.php?page=   ?module=redirect&page=object&tab=ip&op=add
