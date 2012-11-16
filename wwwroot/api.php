@@ -621,7 +621,7 @@ try {
 
 
         // update user-defined tags for an object
-        //    UI equivalent: /index.php?module=redirect&page=tagtree&tab=edit&op=createTag
+        //    UI equivalent: /index.php?module=redirect&page=object&tab=tags&op=saveTags
         //    UI handler: saveEntityTags()
         case 'update_object_tags':
 	        require_once 'inc/init.php';
