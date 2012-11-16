@@ -368,7 +368,6 @@ try {
                     for ($locidx = 0; $locidx < 3; $locidx++)
                     {
                       $atom = $loclist[$locidx];
-                      //error_log("considering $rack_id $position $locidx ($atom)");
 
                       // atom can't be assigned to, skip.
                       //     XXX: maybe should warn if attempted? (UI similarly ignores)
@@ -539,12 +538,9 @@ try {
                 //   note: in UI, a "num_attrs" input is used to loop and search for update fields
                 foreach ( $_REQUEST as $name => $value )
                 {
-                        error_log( "considering parameter: $name => $value" );
-
                         if ( preg_match( '/^attr_(\d+)$/', $name, $matches ) )
                         {
                                 $attr_id = $matches[1];
-                                error_log( "parameter $name is an object attribute, ID: $attr_id" );
 
                                 // make sure the attribute actually exists in the object
                                 if (! array_key_exists ($attr_id, $oldvalues))
@@ -552,7 +548,6 @@ try {
 
                                 // convert date arguments
                                 if ('date' == $oldvalues[$attr_id]['type']) {
-                                        error_log( "check date field: $attr_id => $value" );
                                         assertDateArg ( $name, TRUE);
                                         if ($value != '')
                                                 $value = strtotime ($value);
@@ -562,7 +557,6 @@ try {
                                 // type is a dictionary and it is the "--NOT SET--" value of 0.
                                 if ($value == '' || ($oldvalues[$attr_id]['type'] == 'dict' && $value == 0))
                                 {
-                                        error_log( "delete empty attribute ID $attr_id" );
                                         commitUpdateAttrValue ($object_id, $attr_id);
                                         continue;
                                 }
