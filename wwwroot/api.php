@@ -828,7 +828,8 @@ try {
         case 'get_depot':
 		require_once 'inc/init.php';
 
-                $objects = listCells ('object');
+                $cellfilter = getCellFilter();
+                $objects = filterCellList (listCells ('object'), $cellfilter['expression']);
 
                 // TODO: get full mount info, like rowID, using getMountInfo()
 
