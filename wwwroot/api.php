@@ -461,6 +461,35 @@ try {
                 break;
 
 
+        // link two entities (most often used for server / chassis mounting)
+        //    UI equivalent: /index.php?module=redirect&page=object&tab=edit&op=linkEntities& ...
+        //    UI handler: linkEntities()
+        case 'link_entities':
+	        require_once 'inc/init.php';
+
+                assertStringArg ('child_entity_type', TRUE);
+                assertUIntArg ('child_entity_id', TRUE);
+                assertStringArg ('parent_entity_type', TRUE);
+                assertUIntArg ('parent_entity_id', TRUE);
+
+                usePreparedInsertBlade
+                  (
+                   'EntityLink',
+                   array
+                   (
+                    'parent_entity_type' => $_REQUEST['parent_entity_type'],
+                    'parent_entity_id' => $_REQUEST['parent_entity_id'],
+                    'child_entity_type' => $_REQUEST['child_entity_type'],
+                    'child_entity_id' => $_REQUEST['child_entity_id'],
+                    )
+                   );
+
+                sendAPIResponse( array(), array( 'message' => 'entities linked successfully',
+                                                 'parent_entity_id' => $_REQUEST['parent_entity_id'],
+                                                 'child_entity_id' => $_REQUEST['child_entity_id'] ) );
+                break;
+
+
         // add one object
         //    UI equivalent: submitting form at /index.php?page=depot&tab=addmore
         //    UI handler: addMultipleObjects()
