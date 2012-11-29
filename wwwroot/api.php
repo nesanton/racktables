@@ -854,7 +854,37 @@ try {
                 $cellfilter = getCellFilter();
                 $objects = filterCellList (listCells ('object'), $cellfilter['expression']);
 
-                // TODO: get full mount info, like rowID, using getMountInfo()
+                // get details if requested
+                if (isset ($_REQUEST['include_attrs']))
+                {
+                        foreach ($objects as $object_id => $object)
+                        {
+                                amplifyCell($object);
+
+                                // return the attributes in an array keyed on 'name', unless otherwise requested
+                                $key_attrs_on = 'name';
+                                if (isset ($_REQUEST['key_attrs_on']))
+                                        $key_attrs_on = $_REQUEST['key_attrs_on'];
+
+                                $attrs = array();
+                                foreach (getAttrValues ( $object_id ) as $record)
+                                {
+                                        // check that the key exists for this record
+                                        if (! isset ($record[ $key_attrs_on ]))
+                                        {
+                                                throw new InvalidRequestArgException ('key_attrs_on',
+                                                                                      $_REQUEST['key_attrs_on'],
+                                                                                      'requested keying value not set for all attributes' );
+                                        }
+
+                                        if ( strlen ( $record['value'] ) )
+                                                $attrs[ $record[ $key_attrs_on ] ] = $record;
+                                }
+
+                                $objects[$object_id] = $object;
+                                $objects[$object_id]['attrs'] = $attrs;
+                        }
+                }
 
                 sendAPIResponse($objects);
                 break;
