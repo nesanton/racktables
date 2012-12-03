@@ -898,7 +898,12 @@ try {
 
                 assertUIntArg ('chapter_no', TRUE);
 
-                $words = readChapter ( $_REQUEST['chapter_no'], 'a');
+                $style = 'a';
+
+                if ( isset($_REQUEST['style']) and 'o' == $_REQUEST['style'])
+                        $style = 'o';
+
+                $words = readChapter ( $_REQUEST['chapter_no'], $style);
 
                 // TODO: add refcount and attributes data to enable filtered lookups? getChapterRefc() and getChapterAttributes()
                 
