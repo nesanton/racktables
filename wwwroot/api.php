@@ -874,7 +874,7 @@ try {
                                         {
                                                 throw new InvalidRequestArgException ('key_attrs_on',
                                                                                       $_REQUEST['key_attrs_on'],
-                                                                                      'requested keying value not set for all attributes' );
+                                                                                      'requested keying value not set for all attributes');
                                         }
 
                                         if ( strlen ( $record['value'] ) )
@@ -887,6 +887,24 @@ try {
                 }
 
                 sendAPIResponse($objects);
+                break;
+
+
+        // get all available object attributes
+        //    UI equivalent: /index.php?page=attrs
+        //    UI handler: renderAttributes()
+        case 'get_attributes':
+	        require_once 'inc/init.php';
+                sendAPIResponse(getAttrMap());
+                break;
+
+
+        // get all chapters in the dictionary
+        //    UI equivalent: /index.php?page=dict
+        //    UI handler: renderDictionary()
+        case 'get_dictionary':
+	        require_once 'inc/init.php';
+                sendAPIResponse(getChapterList());
                 break;
 
 
