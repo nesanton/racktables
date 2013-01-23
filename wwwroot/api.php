@@ -929,6 +929,16 @@ try {
                 break;
 
 
+        // perform a generic search
+        //    UI equivalent: /index.php?page=search
+        //    UI handler: searchEntitiesByText()
+        case 'search':
+                require_once 'inc/init.php';
+                assertStringArg ('term', TRUE);
+                sendAPIResponse(searchEntitiesByText($_REQUEST['term']));
+                break;
+
+
         // <<DESCRIPTION>>
         //    UI equivalent: /index.php?page=
         //    UI handler: ()
