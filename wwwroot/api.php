@@ -577,9 +577,16 @@ try {
 
                                 // convert date arguments
                                 if ('date' == $oldvalues[$attr_id]['type']) {
-                                        assertDateArg ( $name, TRUE);
-                                        if ($value != '')
-                                                $value = strtotime ($value);
+
+                                        // if given date looks like UNIX timestamp, leave as-is,
+                                        // otherwise try to parse it just like the UI
+                                        if ( preg_match( '/^\d{10}$/', $value ) ) {
+                                                error_log( "assuming argument '$value' for attribute $attr_id is a UNIX timestamp" );
+                                        } else {
+                                                assertDateArg ( $name, TRUE);
+                                                if ($value != '')
+                                                        $value = strtotime ($value);
+                                        }
                                 }
 
                                 // Delete attribute and move on, when the field is empty or if the field
