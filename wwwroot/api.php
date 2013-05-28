@@ -3,9 +3,6 @@
 // TODO: look into using global $sic, which has merged GET and POST parameters, instead of $_REQUEST['blah'].
 //       Apparently it may handle UTF-8 arguments better. Created in transformRequestData().
 
-// TODO: split json into response and metadata components. Metadata might include: error messages, success 
-//       messages like items added, deleted, or modified, etc.
-
 ob_start();
 require_once 'inc/pre-init.php';
 try {
