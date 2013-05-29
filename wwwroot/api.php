@@ -970,7 +970,21 @@ catch (Exception $e)
 }
 
 
-// standard format for the http response
+/**
+ * Send a standardized HTTP response to the client.
+ *
+ * Sends a utf8 JSON response to the client, consisting of a top-level array
+ * containing up to three elements:
+ *
+ * * *response*: the actual data being returned
+ * * *metadata*: any additional information, such as number of objects found in a search (optional)
+ * * *errors*: any errors that occured (optional)
+ *
+ * @param mixed[] $data the actual information to be returned
+ * @param mixed[] $metadata metadata about any action taken or results returned
+ * @param int $http_code HTTP code to return
+ * @param mixed[] $errors errors that occured
+ */
 function sendAPIResponse ( $data, $metadata = NULL, $http_code = 200, $errors = NULL )
 {
         $http_body = array( 'response' => $data );
@@ -993,9 +1007,15 @@ function sendAPIResponse ( $data, $metadata = NULL, $http_code = 200, $errors = 
 }
 
 
-// recursively encodes keys and values of a data strucure
-// only required if you're running a PHP version that doesn't
-// have json_encode's JSON_UNESCAPED_UNICODE option
+/**
+ * Recursively utf8 encode a data structure.
+ *
+ * Recursively encodes keys and values of a data strucure. Really only required if
+ * you're running a PHP version that doesn't have json_encode's
+ * JSON_UNESCAPED_UNICODE option.
+ *
+ * @param mixed[] $thing data structure to encode
+ */
 function recursive_utf8_encode ($thing) {
         if (!is_array($thing)){
                 return utf8_encode($thing);
@@ -1012,8 +1032,26 @@ function recursive_utf8_encode ($thing) {
 }
 
 
+/**
+ * Return an exception to the client.
+ *
+ * Based on the class of exception passed, this method will return an appropriate
+ * HTTP code and the description of the error.
+ *
+ * * RackTablesError (500)
+ * * RTDatabaseError (500)
+ * * RackCodeError (500)
+ * * RTPermissionDenied (403)
+ * * EntityNotFoundException (404)
+ * * RTGatewayError (400)
+ * * InvalidArgException (400)
+ * * InvalidRequestArgException (400)
+ *
+ * @param Exception $e the exception that occurred.
+ */
 function printAPIException ($e)
 {
+
         if ($e instanceof RackTablesError)
 
                 switch ( get_class($e) )
