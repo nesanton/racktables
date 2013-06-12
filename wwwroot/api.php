@@ -920,6 +920,12 @@ try {
 
                 assertUIntArg ('chapter_no', TRUE);
 
+                // make sure the chapter exists
+                $chapters = getChapterList();
+                if ( ! isset($chapters[$_REQUEST['chapter_no']]) )
+                  throw new InvalidArgException ('chapter_no', $_REQUEST['chapter_no'],
+                                                 "invalid argument: no such chapter");
+
                 $style = 'a';
 
                 if ( isset($_REQUEST['style']) and 'o' == $_REQUEST['style'])
