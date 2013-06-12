@@ -938,6 +938,57 @@ try {
                 sendAPIResponse($words);
                 break;
 
+        // add en entry to a chapter
+        //    UI equivalent: /index.php?module=redirect&page=chapter&tab=edit&op=add&chapter_no=10007&dict_value=asdf
+        //    UI handler: tableHandler()
+        case 'add_chapter_entry':
+	        require_once 'inc/init.php';
+
+                assertUIntArg ('chapter_no', TRUE);
+                assertStringArg ('dict_value', TRUE);
+
+                // make sure the chapter exists
+                $chapters = getChapterList();
+                if ( ! isset($chapters[$_REQUEST['chapter_no']]) )
+                  throw new InvalidArgException ('chapter_no', $_REQUEST['chapter_no'],
+                                                 "invalid argument: no such chapter");
+
+                usePreparedInsertBlade('Dictionary', array('chapter_id' => $_REQUEST['chapter_no'],
+                                                           'dict_value' => $_REQUEST['dict_value']));
+
+                sendAPIResponse(array(), array('message' => 'dictionary entry added successfully',
+                                               'chapter_no' => $_REQUEST['chapter_no']));
+                break;
+
+        // delete an entry from a chapter
+        //    UI equivalent: /index.php?page=chapter&module=redirect&op=del&dict_key=50228&tab=edit&chapter_no=10007
+        //    UI handler: tableHandler()
+        case 'delete_chapter_entry':
+	        require_once 'inc/init.php';
+
+                assertUIntArg ('chapter_no', TRUE);
+                assertStringArg ('dict_value', TRUE);
+
+                // make sure the chapter exists
+                $chapters = getChapterList();
+                if ( ! isset($chapters[$_REQUEST['chapter_no']]) )
+                  throw new InvalidArgException ('chapter_no', $_REQUEST['chapter_no'],
+                                                 "invalid argument: no such chapter");
+
+                // make sure the entry exists in this chapter
+                $words = readChapter ( $_REQUEST['chapter_no'], 'o');
+                if ( ! in_array($_REQUEST['dict_value'], $words) )
+                  throw new InvalidArgException ('dict_value', $_REQUEST['dict_value'],
+                                                 "invalid argument: no such value in chapter ID " . $_REQUEST['chapter_no']);
+
+                usePreparedDeleteBlade ('Dictionary', array ('chapter_id' => $_REQUEST['chapter_no'],
+                                                             'dict_value' => $_REQUEST['dict_value']));
+
+                sendAPIResponse( array(), array( 'message' => 'dictionary entry deleted successfully',
+                                                 'chapter_no' => $_REQUEST['chapter_no'],
+                                                 'dict_value' => $_REQUEST['dict_value']));
+                break;
+
 
         // perform a generic search
         //    UI equivalent: /index.php?page=search
