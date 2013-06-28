@@ -663,6 +663,75 @@ try {
                 break;
 
 
+        // sync a switch or PDU's ports using SNMP
+        //    UI equivalent: /index.php?module=redirect&page=object&tab=snmpportfinder
+        //    UI handler: querySNMPData()
+        case 'snmp_sync_object':
+	        require_once 'inc/init.php';
+	        require_once 'inc/snmp.php';
+
+                global $log_messages;
+
+                genericAssertion ('object_id', 'uint0');
+                genericAssertion ('ver', 'uint');
+                $object_id = $_REQUEST['object_id'];
+
+                $snmpsetup = array ();
+                switch ($_REQUEST['ver']){
+                case 1:
+
+                case 2:
+                        genericAssertion ('community', 'string');
+                        $snmpsetup['community'] = $_REQUEST['community'];
+                        break;
+
+                case 3:
+                        assertStringArg ('sec_name');
+                        assertStringArg ('sec_level');
+                        assertStringArg ('auth_protocol');
+                        assertStringArg ('auth_passphrase', TRUE);
+                        assertStringArg ('priv_protocol');
+                        assertStringArg ('priv_passphrase', TRUE);
+
+                        $snmpsetup['sec_name'] = $_REQUEST['sec_name'];
+                        $snmpsetup['sec_level'] = $_REQUEST['sec_level'];
+                        $snmpsetup['auth_protocol'] = $_REQUEST['auth_protocol'];
+                        $snmpsetup['auth_passphrase'] = $_REQUEST['auth_passphrase'];
+                        $snmpsetup['priv_protocol'] = $_REQUEST['priv_protocol'];
+                        $snmpsetup['priv_passphrase'] = $_REQUEST['priv_passphrase'];
+                        break;
+
+                default:
+                        throw new InvalidRequestArgException ('ver', $_REQUEST['ver']);
+                }
+
+                $snmpsetup['version'] = $_REQUEST['ver'];
+                doSNMPmining ($object_id, $snmpsetup);
+
+                $snmp_result = '';
+
+                // look inside $log_messages -- fragile but all we
+                // have since doSNMPminint() is meant to return data
+                // via the UI
+                if (count($log_messages)){
+                  $msg = array_shift($log_messages);
+                  if (in_array('a', $msg)) {
+                    $snmp_result = $msg['a'][0];
+                  }
+                }
+
+                if ($snmp_result) {
+                  sendAPIResponse(array(), array('message'    => "SNMP sync for object id $object_id successful",
+                                                 'model_data' => $snmp_result));
+                } else {
+                  throw new InvalidArgException('(unknown)',
+                                                '(unknown)',
+                                                "unknown problem syncing object id $object_id via SNMP v$_REQUEST[ver]");
+                }
+
+                break;
+
+
         // update an object's IP address
         //    UI equivalent: /index.php?page=   ?module=redirect&page=object&tab=ip&op=add
         //    UI handler: addIPAllocation()
