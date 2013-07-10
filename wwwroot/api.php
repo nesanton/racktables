@@ -87,6 +87,41 @@ try {
                 break;
 
 
+        // get all VLAN domains
+        //    UI equivalent: /index.php?page=
+        //    UI handler: ()
+        case 'get_vlan_domains':
+	        require_once 'inc/init.php';
+                sendAPIResponse(getVLANDomainStats());
+                break;
+
+
+        // get VLANs in one domain
+        //    UI equivalent: /index.php?page=
+        //    UI handler: ()
+        case 'get_vlan_domain':
+	        require_once 'inc/init.php';
+                assertUIntArg ('domain_id');
+                $domain = getDomainVLANs($_REQUEST['domain_id']);
+                if (!$domain)
+                {
+                        throw new EntityNotFoundException('domain_id', $_REQUEST['domain_id']);
+                }
+
+                sendAPIResponse($domain);
+                break;
+
+
+        // get info for one VLAN
+        //    UI equivalent: /index.php?page=
+        //    UI handler: ()
+        case 'get_vlan':
+	        require_once 'inc/init.php';
+                assertStringArg ('vlan_ck', TRUE);
+                sendAPIResponse(getVLANInfo($_REQUEST['vlan_ck']));
+                break;
+
+
         // get overall rackspace status
         //    UI equivalent: /index.php?page=rackspace
         //    UI handler: renderRackspace()
