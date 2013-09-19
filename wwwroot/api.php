@@ -175,6 +175,7 @@ try {
 
                 // basic IP address info
                 $address = getIPAddress (ip_parse ( $_REQUEST['ip'] ));
+                $address['network_id'] = getIPAddressNetworkId( ip_parse( $_REQUEST['ip'] ));
 
                 // TODO: add some / all of the following data
                 // virtual services 
