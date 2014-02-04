@@ -15,10 +15,23 @@
 // Complain about martian char.
 function lexError1 ($state, $text, $pos, $ln = 'N/A')
 {
+	$char = mb_substr ($text, $pos, 1);
+	switch ($char)
+	{
+		case "\n":
+			$char = '\n';
+			break;
+		case "\r":
+			$char = '\r';
+			break;
+		case "\t":
+			$char = '\t';
+			break;
+	}
 	return array
 	(
 		'result' => 'NAK',
-		'load' => "Invalid character '" . mb_substr ($text, $pos, 1) . "' near line ${ln}"
+		'load' => "Invalid character '${char}' near line ${ln}"
 	);
 }
 
@@ -104,16 +117,17 @@ function getLexemsFromRawText ($text)
 						$buffer = $char;
 						break;
 					case ($char == "\n"):
-						$lineno++; // fall through
 					case ($char == ' '):
 					case ($char == "\t"):
 						// nom-nom...
 						break;
 					case ($char == '{'):
-						$newstate = 'reading tag 1';
+						$newstate = 'reading tag';
+						$buffer = '';
 						break;
 					case ($char == '['):
-						$newstate = 'reading predicate 1';
+						$newstate = 'reading predicate';
+						$buffer = '';
 						break;
 					default:
 						return lexError1 ($state, $text, $i, $lineno);
@@ -126,7 +140,6 @@ function getLexemsFromRawText ($text)
 						$buffer .= $char;
 						break;
 					case ($char == "\n"):
-						$lineno++; // fall through
 					case ($char == ' '):
 					case ($char == "\t"):
 					case ($char == ')'): // this will be handled below
@@ -183,79 +196,34 @@ function getLexemsFromRawText ($text)
 						return lexError1 ($state, $text, $i, $lineno);
 				}
 				break;
-			case 'reading tag 1':
-				switch (TRUE)
+			case 'reading tag':
+			case 'reading predicate':
+				$tag_mode = ($state == 'reading tag');
+				$breaking_char = $tag_mode ? '}' : ']';
+				switch ($char)
 				{
-					case ($char == "\n"):
-						$lineno++; // fall through
-					case ($char == ' '):
-					case ($char == "\t"):
-						// nom-nom...
-						break;
-					case (preg_match ('/[\p{L}0-9\$]/u', $char) == 1):
-						$buffer = $char;
-						$newstate = 'reading tag 2';
-						break;
-					default:
-						return lexError1 ($state, $text, $i, $lineno);
-				}
-				break;
-			case 'reading tag 2':
-				switch (TRUE)
-				{
-					case ($char == '}'):
-						$buffer = rtrim ($buffer);
-						if (!validTagName ($buffer, TRUE))
+					case $breaking_char:
+						$buffer = trim ($buffer, "\t ");
+						if (!validTagName ($buffer, $tag_mode))
 							return lexError4 ($buffer, $lineno);
-						$ret[] = array ('type' => ($buffer[0] == '$' ? 'LEX_AUTOTAG' : 'LEX_TAG'), 'load' => $buffer, 'lineno' => $lineno);
+						if ($tag_mode)
+							$lex_type = ($buffer[0] == '$' ? 'LEX_AUTOTAG' : 'LEX_TAG');
+						else
+							$lex_type = 'LEX_PREDICATE';
+						$ret[] = array ('type' => $lex_type, 'load' => $buffer, 'lineno' => $lineno);
 						$newstate = 'ESOTSM';
 						break;
-					case (preg_match ('/[\p{L}0-9. _~-]/u', $char) == 1):
+					case "\n":
+						return lexError1 ($state, $text, $i, $lineno);
+					default:
 						$buffer .= $char;
 						break;
-					default:
-						return lexError1 ($state, $text, $i, $lineno);
-				}
-				break;
-			case 'reading predicate 1':
-				switch (TRUE)
-				{
-					case ($char == "\n"):
-						$lineno++; // fall through
-					case ($char == ' '):
-					case ($char == "\t"):
-						// nom-nom...
-						break;
-					case (preg_match ('/[\p{L}0-9]/u', $char) == 1):
-						$buffer = $char;
-						$newstate = 'reading predicate 2';
-						break;
-					default:
-						return lexError1 ($state, $text, $i, $lineno);
-				}
-				break;
-			case 'reading predicate 2':
-				switch (TRUE)
-				{
-					case ($char == ']'):
-						$buffer = rtrim ($buffer);
-						if (!validTagName ($buffer))
-							return lexError4 ($buffer, $lineno);
-						$ret[] = array ('type' => 'LEX_PREDICATE', 'load' => $buffer, 'lineno' => $lineno);
-						$newstate = 'ESOTSM';
-						break;
-					case (preg_match ('/[\p{L}0-9. _~-]/u', $char) == 1):
-						$buffer .= $char;
-						break;
-					default:
-						return lexError1 ($state, $text, $i, $lineno);
 				}
 				break;
 			case 'skipping comment':
 				switch ($char)
 				{
 					case "\n":
-						$lineno++;
 						$newstate = 'ESOTSM';
 					default: // eat char, nom-nom...
 						break;
@@ -264,6 +232,8 @@ function getLexemsFromRawText ($text)
 			default:
 				die (__FUNCTION__ . "(): internal error, state == ${state}");
 		endswitch;
+		if ($char == "\n")
+			$lineno++;
 		$state = $newstate;
 	endfor;
 	if ($state != 'ESOTSM' and $state != 'skipping comment')
@@ -290,7 +260,7 @@ function getLexemsFromRawText ($text)
 // After parsing the input successfully a list of SYNT_GRANT and SYNT_DEFINITION
 // trees is returned.
 //
-// P.S. The above is true for input, which is a complete and correct RackCode text.
+// P.S. The above is true for input that is a complete and correct RackCode text.
 // Other inputs may produce different combinations of lex/synt structures. Calling
 // function must check the parse tree itself.
 function getParseTreeFromLexems ($lexems)
@@ -482,7 +452,7 @@ function getParseTreeFromLexems ($lexems)
 			// UNARY_EXPRESSION ::= true | false | TAG | AUTOTAG | PREDICATE
 			if
 			(
-				$stacktop['type'] == 'LEX_TAG' or // first look for tokens, which are most
+				$stacktop['type'] == 'LEX_TAG' or // first look for tokens that are most
 				$stacktop['type'] == 'LEX_AUTOTAG' or // likely to appear in the text
 				$stacktop['type'] == 'LEX_PREDICATE' or // supplied by user
 				$stacktop['type'] == 'LEX_TRUE' or
@@ -858,7 +828,7 @@ function locateSyntaxError ($stack)
 {
 	// The first SYNT_CODETEXT node, if is present, holds stuff already
 	// successfully processed. Its line counter shows, where the last reduction
-	// took place (it _might_ be the same line, which causes the syntax error).
+	// took place (it _might_ be the same line that causes the syntax error).
 	// The next node (it's very likely to exist) should have its line counter
 	// pointing to the place, where the first (of 1 or more) error is located.
 	if (isset ($stack[0]['type']) and $stack[0]['type'] == 'SYNT_CODETEXT')
@@ -1026,7 +996,7 @@ function findTagWarnings ($expr)
 	}
 }
 
-// Check context modifiers, warn about those, which try referencing non-existent tags.
+// Check context modifiers, warn about those that try referencing non-existent tags.
 function findCtxModWarnings ($modlist)
 {
 	$ret = array();

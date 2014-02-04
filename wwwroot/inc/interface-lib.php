@@ -4,9 +4,6 @@
 # framework. See accompanying file "COPYING" for the full copyright and
 # licensing information.
 
-define ('TAGNAME_REGEXP', '/^[\p{L}0-9]([. _~-]?[\p{L}0-9])*$/u');
-define ('AUTOTAGNAME_REGEXP', '/^\$[\p{L}0-9]([. _~-]?[\p{L}0-9])*$/u');
-
 // Let's have it here, so extensions can add their own images.
 $image = array();
 $image['rackspace']['path'] = 'pix/racks.png';
@@ -174,6 +171,9 @@ $image['object']['height'] = 16;
 $image['OBJECT']['path'] = 'pix/bracket-32x32.png';
 $image['OBJECT']['width'] = 32;
 $image['OBJECT']['height'] = 32;
+$image['LOCATION']['path'] = 'pix/tango-internet-32x32.png';
+$image['LOCATION']['width'] = 32;
+$image['LOCATION']['height'] = 32;
 $image['attach']['path'] = 'pix/tango-mail-attachment-16x16.png';
 $image['attach']['width'] = 16;
 $image['attach']['height'] = 16;
@@ -297,7 +297,8 @@ function getSelect ($optionList, $select_attrs = array(), $selected_id = NULL, $
 		return '(none)';
 	if (count ($optionList) == 1 && $treat_single_special)
 	{
-		foreach ($optionList as $key => $value) { break; }
+		foreach ($optionList as $key => $value)
+			break;
 		return "<input type=hidden name=${select_attrs['name']} id=${select_attrs['name']} value=${key}>" . $value;
 	}
 	if (!array_key_exists ('id', $select_attrs))
@@ -444,11 +445,6 @@ function getImageHREF ($tag, $title = '', $do_input = FALSE, $tabindex = 0)
 			">";
 }
 
-function dos2unix ($text)
-{
-	return str_replace ("\r\n", "\n", $text);
-}
-
 function escapeString ($value, $do_db_escape = FALSE)
 {
 	$ret = htmlspecialchars ($value, ENT_QUOTES, 'UTF-8');
@@ -471,7 +467,7 @@ function transformRequestData()
 	// Escape any globals before we ever try to use them, but keep a copy of originals.
 	$sic = array();
 	// walk through merged GET and POST instead of REQUEST array because it
-	// can contain cookies with data which could not be decoded from UTF-8
+	// can contain cookies with data that could not be decoded from UTF-8
 	foreach (($_POST + $_GET) as $key => $value)
 	{
 		if (is_array ($value))
@@ -738,15 +734,6 @@ function printPageHeaders ()
 				echo "<script type='text/javascript' src='?module=chrome&uri=${item['script']}'></script>\n";
 }
 
-function validTagName ($s, $allow_autotag = FALSE)
-{
-	if (1 == preg_match (TAGNAME_REGEXP, $s))
-		return TRUE;
-	if ($allow_autotag and 1 == preg_match (AUTOTAGNAME_REGEXP, $s))
-		return TRUE;
-	return FALSE;
-}
-
 function cmpTags ($a, $b)
 {
 	global $taglist;
@@ -781,13 +768,26 @@ function getTagClassName ($tagid)
 
 function serializeTags ($chain, $baseurl = '')
 {
+	global $taglist;
 	$tmp = array();
 	usort ($chain, 'cmpTags');
 	foreach ($chain as $taginfo)
 	{
 		$title = '';
 		if (isset ($taginfo['user']) and isset ($taginfo['time']))
-			$title = 'title="' . htmlspecialchars ($taginfo['user'] . ', ' . formatAge ($taginfo['time']), ENT_QUOTES) . '"';
+			$title = htmlspecialchars ($taginfo['user'] . ', ' . formatAge ($taginfo['time']), ENT_QUOTES);
+		if (isset($taginfo['parent_id']))
+		{
+			$parent_info = array();
+			foreach ($taglist[$taginfo['id']]['trace'] as $tag_id)
+				$parent_info[] = $taglist[$tag_id]['tag'];
+			$parent_info[] = $taginfo['tag'];
+			if (strlen ($title))
+				$title .= "\n";
+			$title .= implode (" \xE2\x86\x92  ", $parent_info); # right arrow
+		}
+		if (strlen ($title))
+			$title = "title='$title'";
 
 		$class = '';
 		if (isset ($taginfo['id']))
@@ -819,7 +819,7 @@ function finishPortlet ()
 function getPageName ($page_code)
 {
 	global $page;
-	$title = isset ($page[$page_code]['title']) ? $page[$page_code]['title'] : callHook ('dynamic_title_decoder' ,$page_code);
+	$title = isset ($page[$page_code]['title']) ? $page[$page_code]['title'] : callHook ('dynamic_title_decoder', $page_code);
 	if (is_array ($title))
 		$title = $title['name'];
 	return $title;
@@ -914,8 +914,6 @@ function getOpLink ($params, $title,  $img_name = '', $comment = '', $class = ''
 	$class = trim ($class);
 	if (! empty ($class))
 		$ret .= ' class="' . htmlspecialchars ($class, ENT_QUOTES) . '"';
-	if (! empty ($comment))
-		$ret .= 'title="' . htmlspecialchars($comment, ENT_QUOTES) . '"';
 	$ret .= '>';
 	if (! empty ($img_name))
 	{
@@ -923,6 +921,8 @@ function getOpLink ($params, $title,  $img_name = '', $comment = '', $class = ''
 		if (! empty ($title))
 			$ret .= ' ';
 	}
+	if (FALSE !== strpos ($class, 'need-confirmation'))
+		addJS ('js/racktables.js');
 	$ret .= $title . '</a>';
 	return $ret;
 }
@@ -989,6 +989,106 @@ function printOpFormIntro ($opname, $extra = array(), $upload = FALSE)
 	fillBypassValues ($pageno, $extra);
 	foreach ($extra as $inputname => $inputvalue)
 		printf ('<input type=hidden name="%s" value="%s">', htmlspecialchars ($inputname, ENT_QUOTES), htmlspecialchars ($inputvalue, ENT_QUOTES));
+}
+
+
+// Display hrefs for all of a file's parents. If scissors are requested,
+// prepend cutting button to each of them.
+function serializeFileLinks ($links, $scissors = FALSE)
+{
+	$comma = '';
+	$ret = '';
+	foreach ($links as $link_id => $li)
+	{
+		$cell = spotEntity ($li['entity_type'], $li['entity_id']);
+		$ret .= $comma;
+		if ($scissors)
+			$ret .= getOpLink (array('op'=>'unlinkFile', 'link_id'=>$link_id), '', 'cut', 'Unlink file') . ' ';
+		$ret .= mkCellA ($cell);
+		$comma = '<br>';
+	}
+	return $ret;
+}
+
+// This is a dual-purpose formating function:
+// 1. Replace empty strings with nbsp.
+// 2. Cut strings that are too long: append "cut here" indicator and provide a mouse hint.
+function niftyString ($string, $maxlen = 30, $usetags = TRUE)
+{
+	$cutind = '&hellip;'; // length is 1
+	if (!mb_strlen ($string))
+		return '&nbsp;';
+	// a tab counts for a space
+	$string = preg_replace ("/\t/", ' ', $string);
+	if (!$maxlen or mb_strlen ($string) <= $maxlen)
+		return htmlspecialchars ($string, ENT_QUOTES, 'UTF-8');
+	return
+		($usetags ? ("<span title='" . htmlspecialchars ($string, ENT_QUOTES, 'UTF-8') . "'>") : '') .
+		str_replace (' ', '&nbsp;', htmlspecialchars (mb_substr ($string, 0, $maxlen - 1), ENT_QUOTES, 'UTF-8')) .
+		$cutind .
+		($usetags ? '</span>' : '');
+}
+
+function printTagsPicker ($preselect=NULL)
+{
+	printTagsPickerInput ();
+	printTagsPickerUl ($preselect);
+	enableTagsPicker ();
+}
+
+function printTagsPickerInput ($input_name="taglist")
+{
+	# use data-attribute as identifier for tagit
+	echo "<input type='text' data-tagit-valuename='" . $input_name . "' data-tagit='yes' placeholder='new tags here...' class='ui-autocomplete-input' autocomplete='off' role='textbox' aria-autocomplete='list' aria-haspopup='true'>";
+	echo "<span title='show tag tree' class='icon-folder-open tagit_input_" . $input_name . "'></span>";
+}
+
+function printTagsPickerUl ($preselect=NULL, $input_name="taglist")
+{
+	global $target_given_tags;
+	if ($preselect === NULL)
+		$preselect = $target_given_tags;
+	foreach ($preselect as $key => $value) # readable time format
+		$preselect[$key]['time_parsed'] = formatAge ($value['time']);
+	usort ($preselect, 'cmpTags');
+	$preselect_hidden = "";
+	foreach ($preselect as $value){
+		$preselect_hidden .= "<input type=hidden name=" . $input_name . "[] value=" . $value['id'] . ">";
+	}
+	echo $preselect_hidden; # print preselected tags id that used in case javascript problems
+	echo "<ul data-tagit='yes' data-tagit-valuename='" . $input_name . "' data-tagit-preselect='" . json_encode($preselect) . "' class='tagit-vertical'></ul>";
+}
+
+function enableTagsPicker ()
+{
+	global $taglist;
+	static $taglist_inserted;
+	includeJQueryUI ();
+	addCSS ('css/tagit.css');
+	addJS ('js/tag-it.js');
+	addJS ('js/tag-it-local.js');
+	if (! $taglist_inserted)
+	{
+		$taglist_filtered = array();
+		foreach ($taglist as $key => $taginfo) # remove unused fields
+			$taglist_filtered[$key] = array_sub ($taginfo, array("tag", "is_assignable", "trace"));
+		addJS ('var taglist = ' . json_encode ($taglist_filtered) . ';', TRUE);
+		$taglist_inserted = TRUE;
+	}
+}
+
+function makeIPAllocLink ($ip_bin, $alloc, $display_ifname = FALSE)
+{
+	$object_name = ! isset ($object_name) || ! strlen ($object_name) ?
+		formatEntityName (spotEntity ('object', $alloc['object_id'])) :
+		$alloc['object_name'];
+	$title = $display_ifname ?
+		'' :
+		"{$alloc['name']} @ {$object_name}";
+	return
+		'<a href="' . makeHref (array ('page' => 'object', 'tab' => 'default', 'object_id' => $alloc['object_id'], 'hl_ip' => ip_format ($ip_bin))) . '"' .
+		' title="' . htmlspecialchars ($title, ENT_QUOTES) . '"' .
+		">" . ($display_ifname ? $alloc['name'] . '@' : '') . $object_name . "</a>";
 }
 
 ?>

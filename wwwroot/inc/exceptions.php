@@ -66,7 +66,6 @@ class RackTablesError extends Exception
 	}
 }
 
-// this simplifies construction of RackTablesError, but is never caught
 class EntityNotFoundException extends RackTablesError
 {
 	function __construct($entity, $id)
@@ -75,19 +74,48 @@ class EntityNotFoundException extends RackTablesError
 	}
 	public function dispatch()
 	{
-		RackTablesError::genHTMLPage ('Missing record', "<h2>Missing record</h2><br>" . $this->message);
+		global $debug_mode;
+		if ($debug_mode)
+		{
+			printGenericException ($this);
+			return;
+		}
+		showError ($this->message);
+		redirectUser (buildRedirectURL('index', 'default'));
 	}
 }
 
-// this simplifies construction of RackTablesError, but is never caught
+class ERetryNeeded extends RackTablesError
+{
+	function __construct($message)
+	{
+		$this->code = parent::INTERNAL;
+		parent::__construct ($message);
+	}
+}
+
 class InvalidArgException extends RackTablesError
 {
+	// derive an instance of InvalidRequestArgException
+	function newIRAE ($argname)
+	{
+		return new InvalidRequestArgException ($argname, $_REQUEST[$argname], $this->reason);
+	}
+	// for backward compatibility only, remove together with convertToIRAE()
+	function newIRAESameArgument()
+	{
+		return new InvalidRequestArgException ($this->name, $this->value, $this->reason);
+	}
 	function __construct ($name, $value, $reason=NULL)
 	{
-		$message = "Argument '${name}' of value '".var_export($value,true)."' is invalid.";
-		if (!is_null($reason))
-			$message .= ' ('.$reason.')';
+		$message = 'Argument \'' . niftyString ($name) . '\'' .
+			' of value ' . niftyString (var_export ($value, TRUE), 200) .
+			' is invalid' . (is_null ($reason) ? '' : ' (' . niftyString ($reason, 100) . ')') .
+			'.';
 		parent::__construct ($message, parent::INTERNAL);
+		$this->name = $name;
+		$this->value = $value;
+		$this->reason = $reason;
 	}
 }
 
@@ -178,33 +206,36 @@ function dumpArray($arr)
 {
 	echo '<table class="exceptionParametersDump">';
 	foreach($arr as $key=>$value)
-	{
-		echo "<tr><th>$key</th><td>$value</td></tr>";
-	}
+		echo '<tr><th>' . niftyString ($key) . '</th><td>' . niftyString ($value, 100) . '</td></tr>';
 	echo '</table>';
 }
 
 function stringTrace($trace)
 {
 	$ret = '';
-	foreach($trace as $line) {
+	foreach ($trace as $line)
+	{
 		if (isset ($line['file']) && isset ($line['line']))
 			$ret .= $line['file'].':'.$line['line'].' ';
 		$ret .= $line['function'].'(';
 		$f = true;
-		if (isset($line['args']) and is_array($line['args'])) foreach ($line['args'] as $arg) {
-			if (!$f) $ret .= ', ';
-			if (is_string($arg))
-				$printarg = "'".$arg."'";
-			elseif (is_null($arg))
-				$printarg = 'NULL';
-			elseif (is_array($arg))
-				$printarg = print_r($arg, 1);
-			else
-				$printarg = $arg;
-			$ret .= $printarg;
-			$f = false;
-		}
+		if (isset ($line['args']) and is_array ($line['args']))
+			foreach ($line['args'] as $arg)
+			{
+				if (! $f) $ret .= ', ';
+				if (is_string ($arg))
+					$printarg = "'" . $arg . "'";
+				elseif (is_null ($arg))
+					$printarg = 'NULL';
+				elseif (is_array ($arg))
+					$printarg = print_r ($arg, 1);
+				elseif (is_object ($arg))
+					$printarg = "Object(" . get_class ($arg) . ")";
+				else
+					$printarg = $arg;
+				$ret .= $printarg;
+				$f = false;
+			}
 		$ret .= ")\n";
 	}
 	return $ret;
@@ -266,7 +297,6 @@ function printGenericException($e)
 
 function printException($e)
 {
-	global $debug_mode;
 	if ($e instanceof RackTablesError)
 		$e->dispatch();
 	elseif ($e instanceof PDOException)

@@ -4,7 +4,7 @@
 # framework. See accompanying file "COPYING" for the full copyright and
 # licensing information.
 
-// Return a list of rack IDs, which are P or less positions
+// Return a list of rack IDs that are P or less positions
 // far from the given rack in its row.
 function getProximateRacks ($rack_id, $proximity = 0)
 {
@@ -12,8 +12,7 @@ function getProximateRacks ($rack_id, $proximity = 0)
 	if ($proximity > 0)
 	{
 		$rack = spotEntity ('rack', $rack_id);
-		$rackList = listCells ('rack', $rack['row_id']);
-		doubleLink ($rackList);
+		$rackList = doubleLink (listCells ('rack', $rack['row_id']));
 		$todo = $proximity;
 		$cur_item = $rackList[$rack_id];
 		while ($todo and array_key_exists ('prev_key', $cur_item))
@@ -94,8 +93,26 @@ INNER JOIN (
 	// rack filter
 	if (! empty ($filter['racks']))
 	{
-		$query .= 'AND p.object_id IN (SELECT DISTINCT object_id FROM RackSpace WHERE rack_id IN (' .
-			questionMarks (count ($filter['racks'])) . ')) ';
+		// objects directly mounted in the racks
+		$query .= sprintf
+		(
+			'AND p.object_id IN (SELECT DISTINCT object_id FROM RackSpace WHERE rack_id IN (%s) ',
+			questionMarks (count ($filter['racks']))
+		);
+		// children of objects directly mounted in the racks
+		$query .= sprintf
+		(
+			"UNION SELECT child_entity_id FROM EntityLink WHERE parent_entity_type='object' AND child_entity_type = 'object' AND parent_entity_id IN (SELECT DISTINCT object_id FROM RackSpace WHERE rack_id IN (%s)) ",
+			questionMarks (count ($filter['racks']))
+		);
+		// zero-U objects mounted to the racks
+		$query .= sprintf
+		(
+			"UNION SELECT child_entity_id FROM EntityLink WHERE parent_entity_type='rack' AND child_entity_type='object' AND parent_entity_id IN (%s)) ",
+			questionMarks (count ($filter['racks']))
+		);
+		$qparams = array_merge ($qparams, $filter['racks']);
+		$qparams = array_merge ($qparams, $filter['racks']);
 		$qparams = array_merge ($qparams, $filter['racks']);
 	}
 	// objectname filter
@@ -103,6 +120,12 @@ INNER JOIN (
 	{
 		$query .= 'AND o.name like ? ';
 		$qparams[] = '%' . $filter['objects'] . '%';
+	}
+	// asset_no filter
+	if (! empty ($filter['asset_no']))
+	{
+		$query .= 'AND o.asset_no like ? ';
+		$qparams[] = '%' . $filter['asset_no'] . '%';
 	}
 	// portname filter
 	if (! empty ($filter['ports']))
@@ -151,7 +174,7 @@ INNER JOIN (
 	return $ret;
 }
 
-// Return a list of all objects which are possible parents
+// Return a list of all objects that are possible parents
 //    Special case for VMs and VM Virtual Switches
 //        - only select Servers with the Hypervisor attribute set to Yes
 function findObjectParentCandidates ($object_id)
@@ -214,7 +237,7 @@ function renderPopupObjectSelector()
 	echo '<br>';
 	echo "<input type=submit value='Proceed' onclick='".
 		"if (getElementById(\"parents\").value != \"\") {".
-		"	opener.location=\"?module=redirect&page=object&tab=edit&op=linkEntities&object_id=${object_id}&child_entity_type=object&child_entity_id=${object_id}&parent_entity_type=object&parent_entity_id=\"+getElementById(\"parents\").value; ".
+		"	opener.location=\"?module=redirect&page=object&tab=edit&op=linkObjects&object_id=${object_id}&child_entity_type=object&child_entity_id=${object_id}&parent_entity_type=object&parent_entity_id=\"+getElementById(\"parents\").value; ".
 		"	window.close();}'>";
 	echo '</form></div>';
 }
@@ -260,7 +283,7 @@ function handlePopupPortLink()
 			8, 
 			array
 			(
-				formatPortLink ($port_info['id'], $port_info['name'], NULL, NULL),
+				formatPortLink ($port_info['object_id'], NULL, $port_info['id'], $port_info['name']),
 				formatPort ($remote_port_info),
 			)
 		);
@@ -362,23 +385,33 @@ function renderPopupPortSelector()
 		'racks' => array(),
 		'objects' => '',
 		'ports' => '',
+		'asset_no' => '',
 	);
 	if (isset ($_REQUEST['filter-obj']))
 		$filter['objects'] = trim($_REQUEST['filter-obj']);
 	if (isset ($_REQUEST['filter-port']))
 		$filter['ports'] = trim($_REQUEST['filter-port']);
+	if (isset ($_REQUEST['filter-asset_no']))
+		$filter['asset_no'] = trim($_REQUEST['filter-asset_no']);
 	if ($in_rack)
 	{
 		$object = spotEntity ('object', $port_info['object_id']);
-		if ($object['rack_id'])
+		if ($object['rack_id']) // the object itself is mounted in a rack
 			$filter['racks'] = getProximateRacks ($object['rack_id'], getConfigVar ('PROXIMITY_RANGE'));
+		elseif ($object['container_id']) // the object is not mounted in a rack, but it's container may be
+		{
+			$container = spotEntity ('object', $object['container_id']);
+			if ($container['rack_id'])
+				$filter['racks'] = getProximateRacks ($container['rack_id'], getConfigVar ('PROXIMITY_RANGE'));
+		}
 	}
 	$spare_ports = array();
 	if
 	(
 		! empty ($filter['racks'])  ||
 		! empty ($filter['objects']) ||
-		! empty ($filter['ports'])
+		! empty ($filter['ports']) ||
+		! empty ($filter['asset_no'])
 	)
 		$spare_ports = findSparePorts ($port_info, $filter);
 
@@ -391,6 +424,7 @@ function renderPopupPortSelector()
 	echo '<input type=hidden name="port" value="' . $port_id . '">';
 	echo '<table align="center" valign="bottom"><tr>';
 	echo '<td class="tdleft"><label>Object name:<br><input type=text size=8 name="filter-obj" value="' . htmlspecialchars ($filter['objects'], ENT_QUOTES) . '"></label></td>';
+	echo '<td class="tdleft"><label>Asset tag:<br><input type=text size=8 name="filter-asset_no" value="' . htmlspecialchars ($filter['asset_no'], ENT_QUOTES) . '"></label></td>';
 	echo '<td class="tdleft"><label>Port name:<br><input type=text size=6 name="filter-port" value="' . htmlspecialchars ($filter['ports'], ENT_QUOTES) . '"></label></td>';
 	echo '<td class="tdleft" valign="bottom"><label><input type=checkbox name="in_rack"' . ($in_rack ? ' checked' : '') . '>Nearest racks</label></td>';
 	echo '<td valign="bottom"><input type=submit value="show ports"></td>';

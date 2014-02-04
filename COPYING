@@ -1,6 +1,7 @@
 RackTables - datacenter and server room management framework
 
-Copyright (c) 2013 Alexey Andriyanov, Aaron Dummer, Denis Ovsienko and contributors
+Copyright (c) 2013 Alexey Andriyanov, Aaron Dummer, Denis Ovsienko and
+                   contributors
 Copyright (c) 2011-2012 Denis Ovsienko, Alexey Andriyanov, Aaron Dummer,
                    Jonathan Thurman and contributors
 Copyright (c) 2010 Denis Ovsienko, Ryan Farrington, Alexey Andriyanov,
@@ -73,13 +74,6 @@ Dragon ASCII art (c) Daniel C. Au
 
 ----------------------8<----------------------8<----------------------
 
-RackTables includes portions of the CodePress Online Real Time Syntax
-Highlighting Editor version 0.9.6 (http://codepress.sourceforge.net/),
-which is copyright (C) Fernando M.A.d.S. <fermads@gmail.com> & Michael Hurni
-and is distributed under GNU LGPL license.
-
-----------------------8<----------------------8<----------------------
-
 RackTables includes a modified dragon image, which is available free for
 personal and business use from medievalresources.com
 
@@ -103,7 +97,8 @@ The pgAdmin Development Team. pgAdmin is released under the BSD license.
 ----------------------8<----------------------8<----------------------
 
 RackTables uses icons from Sweetie icon set, http://sweetie.sublink.ca
-Sweetie icon set is licensed under the Creative Commons Attribution Share-alike 3.0.
+Sweetie icon set is licensed under the Creative Commons Attribution
+Share-alike 3.0.
 
 ----------------------8<----------------------8<----------------------
 
@@ -116,3 +111,13 @@ RackTables uses JS library jquery.optionTree written by Krzysztof Kotowicz.
 http://code.google.com/p/jquery-option-tree/. This library is released
 under the MIT license.
 
+----------------------8<----------------------8<----------------------
+
+RackTables uses CodeMirror by Marijn Haverbeke: http://codemirror.net/.
+This library is released under a MIT style license.
+
+----------------------8<----------------------8<----------------------
+
+RackTables uses TagIt! jQuery widget by Levy Carneiro Jr.:
+http://aehlke.github.com/tag-it/.
+This library is released under the MIT license.

@@ -6,14 +6,16 @@
 
 /*
 
-The purpose of this file is to contain functions, which generate a complete
+The purpose of this file is to contain functions that generate a complete
 HTTP response body and are either "dead ends" or depend on just a small
 amount of other code (which should eventually be placed in a sort of
 "first order" library file).
 
 */
 
-define ('RE_STATIC_URI', '#^([[:alpha:]]+)/(?:[[:alpha:]]+/)*[[:alnum:]\._-]+\.([[:alpha:]]+)$#');
+require_once 'slb-interface.php';
+
+define ('RE_STATIC_URI', '#^([[:alpha:]]+)/(?:[[:alnum:]]+[[:alnum:]_.-]*/)*[[:alnum:]\._-]+\.([[:alpha:]]+)$#');
 
 function dispatchImageRequest()
 {
@@ -138,7 +140,6 @@ function printRackThumbImage ($rack_id, $scale = 1)
 {
 	$rackData = spotEntity ('rack', $rack_id);
 	amplifyCell ($rackData);
-	markupObjectProblems ($rackData);
 	global $rtwidth;
 	$offset[0] = 3;
 	$offset[1] = 3 + $rtwidth[0];
@@ -336,7 +337,7 @@ function renderImagePreview ($file_id)
 
 function printStatic404()
 {
-	header ('404 Not Found');
+	header ('HTTP/1.0 404 Not Found');
 ?><!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <html><head>
 <title>404 Not Found</title>
@@ -414,7 +415,8 @@ function proxyCactiRequest ($server_id, $graph_id)
 	$ret['size'] = curl_getinfo ($session, CURLINFO_SIZE_DOWNLOAD);
 
 	// Not an image, probably the login page
-	if (preg_match('/^text\/html.*/i', $ret['type'])) {
+	if (preg_match ('/^text\/html.*/i', $ret['type']))
+	{
 		// Request to set the cookies
 		curl_setopt ($session, CURLOPT_HEADER, TRUE);
 		curl_setopt ($session, CURLOPT_COOKIE, "");	// clear the old cookie
@@ -452,8 +454,8 @@ function proxyCactiRequest ($server_id, $graph_id)
 
 function proxyMuninRequest ($server_id, $graph)
 {
-    $object = spotEntity ('object', $server_id);
-    list ($host, $domain) = preg_split ("/\./", $object['dname'], 2);
+	$object = spotEntity ('object', $server_id);
+	list ($host, $domain) = preg_split ("/\./", $object['dname'], 2);
 
 	$ret = array();
 	$servers = getMuninServers();

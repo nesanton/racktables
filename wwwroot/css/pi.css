@@ -1,3 +1,15 @@
+@media print {
+	body table.maintable { font-size: 80%; }
+	.mainheader { display: none; }
+	.menubar { display: none; }
+	.tabbar { display: none; }
+	div.greynavbar { border-top-width: 0px; }
+	.greynavbar * a[class=std] { display: none; }
+	.greynavbar * a[class=attn] { display: none; }
+	td.atom.state_Th div a { color: red; font-weight: bold; }
+	td.atom div a { font-weight: normal; }
+}
+
 td.submit {
 	text-align: center;
 }
@@ -141,6 +153,7 @@ th.sticker {
 
 td.tagbox {
 	text-align: left;
+	white-space: nowrap;
 }
 td.tagbox.selected {
 	background-color: #a0ffa0;
@@ -173,6 +186,14 @@ td.sticker {
 
 .row_odd {
 	background-color: #e8e8e8;
+}
+
+.row_even.has_problems {
+	background-color: #ffa0a0;
+}
+
+.row_odd.has_problems {
+	background-color: #fbbcbc;
 }
 
 .row_error {
@@ -279,24 +300,49 @@ textarea {
 	border-style : solid;
 	border-color : #000000;
 }
-.menubar, .menubar a {
-	font-family: Verdana, arial, sans-serif;
+
+.maintable {
+	width: 100%;
+	height: 100%;
+}
+
+/* main header line (black one) */
+.mainheader {
+	background-color: black;
+	color: white;
+	padding: 5px;
+}
+.mainheader a {
+	color: #5C98D5;
+	font-family: Arial,Sans-Serif,sans-serif;
+}
+
+/* search and path bar (blue one) */
+.menubar {
+	padding: 5px 3px;
 	font-size: 17px;
 	line-height: 20px;
 	background-color : #3c78b5;
+
+	font-family: Verdana, arial, sans-serif;
+	color : #ffffff;
+}
+
+.menubar a {
+	font-family: Verdana, arial, sans-serif;
 	color : #ffffff;
 	text-decoration : none;
 }
 
-.activemenuitem, .activemenuitem a {
-	background-color : #3c78b5;
-}
-.activemenuitem a:hover {
+.menubar a:hover {
 	text-decoration: underline;
 }
 
-.maintable {
-	height : 100%;
+/* tab bar */
+.greynavbar {
+	background-color: #f0f0f0;
+	border-top: 1px solid #3c78b5;
+	margin-top: 0px;
 }
 
 #foldertab {
@@ -359,8 +405,6 @@ color: white;
 background: #ff8c00;
 border-color: #ff8c00;
 }
-
-.greynavbar {background-color: #f0f0f0; border-top: 1px solid #3c78b5; margin-top: 0px}
 
 .rack {
 	font: bold 12px Verdana, sans-serif;
@@ -453,6 +497,7 @@ border-color: #ff8c00;
 div.commentblock {
 	white-space: pre-wrap;
 	text-align: left;
+	font-family: monospace;
 }
 
 .port_connected_none {
@@ -580,7 +625,7 @@ div.vlan {
 	border: solid 4px lime !important;
 }
 
-/*this style is used for <a>s which does not contain href (ancors), to make them look like plain text*/
+/*this style is used for <a>s that do not contain href (anchors) to make them look like plain text*/
 .nolink {
 	text-decoration: none;
 	color: black;
@@ -591,7 +636,7 @@ div.vlan {
 	text-decoration: none;
 }
 
-/*this class controls popup switch info. It should be on the element which contains portname in plain text*/
+/*This class controls popup switch info. It should be on the element that contains portname in plain text.*/
 .interactive-portname {
 	cursor: default;
 }
@@ -614,6 +659,7 @@ div.vlan {
 	border: 1px solid #000000;
 	background: #FFFFFF;
 	padding: 0px 5px;
+	z-index: 999;
 }
 
 /*popup div with MAC list*/
@@ -669,6 +715,11 @@ div.vlan {
 .state_Tw  { background-color: #804040; }
 .state_Thw { background-color: #ff8080; }
 
+/* highlighting for drag selection */
+.atom.ui-selecting { 
+	background-color: #E2D087 !important; 
+}
+
 /* link with single image as body */
 a.img-link {
 	vertical-align: bottom;
@@ -704,17 +755,6 @@ select.vertical {
 	display: block;
 }
 
-/* main header line (black one) */
-tr.mainheader td {
-	background-color: black;
-	color: white;
-	padding: 5px;
-}
-tr.mainheader td a {
-	color: #5C98D5;
-	font-family: Arial,Sans-Serif,sans-serif;
-}
-
 /* quick links within the main header line */
 ul.qlinks {
 	display: inline;
@@ -743,7 +783,6 @@ ul.uflist {
 	padding: 0;
 }
 ul.uflist li {
-	list-type: none;
 	margin: 0;
 	padding: 5px 0 5px 0;
 }
@@ -771,9 +810,14 @@ a.noclick {
 	display: block;
 }
 
-.aac {
+.aac-right {
 	font-weight: bold;
 	margin-left: 1em;
+}
+
+.aac-left {
+	font-weight: bold;
+	margin-right: 0.5em;
 }
 
 .logentry {
@@ -781,4 +825,89 @@ a.noclick {
 	white-space: pre-wrap;
 	font-family: monospace;
 	font-style: italic;
+}
+
+.varname {
+	font-family: "Courier New",Courier,monospace;
+	font-weight: bold;
+}
+
+.vardescr {
+	font-style: italic;
+	margin: 0 0;
+	font-size: 90%;
+}
+
+.slb-checks {
+	margin: 0px;
+	padding: 0px 2em;
+	list-style: square;
+}
+
+.slb-checks li {
+	margin: 5px 0px;
+	white-space: pre;
+}
+
+.slb-checks li.disabled {
+	color: #999999;
+	list-style-image: url(?module=chrome&uri=pix/unchecked.png)
+}
+
+.slb-checks li.disabled * {
+	color: #999999;
+}
+
+.slb-checks li.enabled {
+	list-style-image: url(?module=chrome&uri=pix/checked.png);
+}
+
+.slb-checks.editable li:hover {
+	list-style-image: url(?module=chrome&uri=pix/pencil-icon.png);
+	cursor: pointer;
+}
+
+.slb-checks.editable li a {
+	cursor: pointer;
+}
+
+.slb-checks.editable li * {
+	cursor: auto;
+}
+
+.slb-checks li form {
+	display: none;
+}
+
+.slb-prio {
+	border: 1px solid #aaaaaa;
+	padding: 0px 2px;
+	margin-left: 1em;
+}
+
+.slbconf-btn {
+	border: 1px solid #aaaaaa;
+	font-size: 12px;
+	font-weight: bold;
+	height: 10px;
+	line-height: 6px;
+
+	display: inline-block;
+	padding: 0px 2px;
+	margin-left: 1em;
+	position: relative;
+	top: -3px;
+}
+
+.popup-box h1 {
+	background-color: #3C78B5;
+	color: white;
+	text-align: center;
+	font-family: verdana, tahoma;
+	font-weight: normal;
+	padding: 0px;
+	margin: 0px -5px;
+	margin-top: 0.5em;
+	font-size: 12px;
+	line-height: 1.5em;
 }

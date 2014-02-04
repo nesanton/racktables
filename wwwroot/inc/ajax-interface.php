@@ -6,7 +6,7 @@
 
 /*
  *
- *  This file contains HTML-generating funcitons which are needed in ajax handler
+ *  This file contains HTML-generating functions required by AJAX handlers.
  *
  *
 */
@@ -140,7 +140,7 @@ function getLocationSelectAJAX()
 {
 	$locationlist = listCells ('location');
 	$locationtree = treeFromList ($locationlist); // adds ['trace'] keys into $locationlist items
-	$options = array();
+	$options = array ();
 	$selected_id = '';
 	if (! isset($_REQUEST['locationid']))
 		$options['error'] = "Sorry, param 'locationid' is empty. Reload page and try again";
@@ -151,15 +151,19 @@ function getLocationSelectAJAX()
 		$current_location_id = $m[1];
 		$selected_id = $locationlist[$current_location_id]['parent_id'];
 		echo $selected_id;
-		$options[0] = '-- NONE --';
-		foreach ($locationlist as $location_id => $locationinfo)
-			if (! in_array ($current_location_id, $locationinfo['trace']) && $current_location_id != $location_id)
-				$options[$location_id] = $locationinfo['name'];
+		echo "<option value=0>-- NONE --</option>";
 	}
-	foreach ($options as $location_id => $value)
-		echo "<option value='$location_id'" .
-			($location_id == $selected_id ? ' selected' : '') .
-			'>' . htmlspecialchars ($value) . '</option>';
+	foreach ($locationtree as $location)
+	{
+		if ($location['id'] == $current_location_id)
+			continue;
+		echo "<option value=${location['id']} ";
+		if ($location['id'] == $selected_id)
+			echo 'selected ';
+		echo "style='font-weight: bold'>${location['name']}</option>";
+		if ($location['kidc'] > 0)
+			printLocationChildrenSelectOptions ($location, 0, $selected_id, $current_location_id);
+	}
 }
 
 function verifyCodeAJAX()
@@ -228,7 +232,7 @@ function updateIPNameAJAX()
 		fixContext ($net);
 	assertPermission ('ipaddress', 'properties', 'editAddress');
 	$reserved = (empty ($sic['text']) ? 'no' : $addr['reserved']); // unset reservation if user clears name
-    $comment = (empty ($addr['comment']) ? '' : $addr['comment']);
+	$comment = (empty ($addr['comment']) ? '' : $addr['comment']);
 	updateAddress ($ip_bin, $sic['text'], $reserved, $comment);
 	echo 'OK';
 }
