@@ -42,6 +42,9 @@ $image['objectlog']['height'] = 200;
 $image['virtual']['path'] = 'pix/virtualresources.png';
 $image['virtual']['width'] = 218;
 $image['virtual']['height'] = 200;
+$image['cables']['path'] = 'pix/patch_cables.png';
+$image['cables']['width'] = 218;
+$image['cables']['height'] = 200;
 $image['download']['path'] = 'pix/download.png';
 $image['download']['width'] = 16;
 $image['download']['height'] = 16;
@@ -114,6 +117,9 @@ $image['COMMIT gray']['height'] = 32;
 $image['RECALC']['path'] = 'pix/tango-view-refresh-32x32.png';
 $image['RECALC']['width'] = 32;
 $image['RECALC']['height'] = 32;
+$image['recalc']['path'] = 'pix/tango-view-refresh-16x16.png';
+$image['recalc']['width'] = 16;
+$image['recalc']['height'] = 16;
 $image['clear']['path'] = 'pix/tango-edit-clear.png';
 $image['clear']['width'] = 16;
 $image['clear']['height'] = 16;
@@ -592,7 +598,7 @@ function getRenderedIPv4NetCapacity ($range)
 		$total = ip4_range_size ($range);
 
 		// compute $a_total: own range size, without subranges
-		if ($range['kidc'] == 0)
+		if (! isset ($range['kidc']) or $range['kidc'] == 0)
 			$a_total = $total;
 		else
 		{

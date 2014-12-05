@@ -59,7 +59,8 @@ function suggest_search (term) {
 	var results = [];
 	if (term == "*") {
 		if (typeof(this.options.tags_trace) != 'undefined' && this.options.tags_trace.length > 0) {
-			this.tagInput.autocomplete('widget').addClass('indented');
+			if (typeof(this.tagInput) != 'undefined')
+				this.tagInput.autocomplete('widget').addClass('indented');
 			var roots = [];
 			var tree_styles = {};
 			tree_styles[0] = [];
@@ -216,9 +217,13 @@ function generateTagList(input, ul, taglist, preselect, value_name, tag_limit, e
 	var oldresizeMenu = $.ui.autocomplete.prototype._resizeMenu;
 	$.ui.autocomplete.prototype._resizeMenu = function() {
 		//oldresizeMenu.call(this);
-		var ul = this.menu.element;
-		ul.children("li:(.ui-menu-item)").addClass("tagit-menu-item");
-		ul.removeClass("ui-widget-content");
+		// do not interfere with other user-defined autocomplete inputs
+		if ($(this.element).filter('input[data-tagit=yes]').length)
+		{
+			var ul = this.menu.element;
+			ul.children("li:(.ui-menu-item)").addClass("tagit-menu-item");
+			ul.removeClass("ui-widget-content");
+		}
 	};
 
 	function renderItem (ul, item) {
@@ -259,7 +264,8 @@ function generateTagList(input, ul, taglist, preselect, value_name, tag_limit, e
 	}
 
 	function suggest_wrapper (request, response) {
-		this.tagInput.autocomplete('widget').removeClass('indented');
+		if (typeof(this.tagInput) != 'undefined')
+			this.tagInput.autocomplete('widget').removeClass('indented');
 		var results = suggest.call(this, request, response);
 		response.call(this, results);
 		return results;

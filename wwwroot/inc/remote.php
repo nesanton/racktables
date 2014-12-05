@@ -18,6 +18,7 @@ $breedfunc = array
 	'ios12-get8021q-readvlan'  => 'ios12PickVLANCommand',
 	'ios12-getportstatus-main' => 'ciscoReadInterfaceStatus',
 	'ios12-getmaclist-main'    => 'ios12ReadMacList',
+	'ios12-getportmaclist-main'=> 'ios12ReadMacList',
 	'ios12-xlatepushq-main'    => 'ios12TranslatePushQueue',
 	'ios12-getallconf-main'    => 'ios12SpotConfigText',
 	'fdry5-get8021q-main'      => 'fdry5ReadVLANConfig',
@@ -32,18 +33,21 @@ $breedfunc = array
 	'vrp53-get8021q-readport'  => 'vrp53PickInterfaceSubcommand',
 	'vrp53-getportstatus-main' => 'vrpReadInterfaceStatus',
 	'vrp53-getmaclist-main'    => 'vrp53ReadMacList',
+	'vrp53-getportmaclist-main'=> 'vrp53ReadMacList',
 	'vrp53-xlatepushq-main'    => 'vrp53TranslatePushQueue',
 	'vrp53-getallconf-main'    => 'vrpSpotConfigText',
 	'vrp55-getlldpstatus-main' => 'vrpReadLLDPStatus',
 	'vrp55-get8021q-main'      => 'vrp55Read8021QConfig',
 	'vrp55-getportstatus-main' => 'vrpReadInterfaceStatus',
 	'vrp55-getmaclist-main'    => 'vrpReadMacList',
+	'vrp55-getportmaclist-main'=> 'vrpReadMacList',
 	'vrp55-xlatepushq-main'    => 'vrp55TranslatePushQueue',
 	'vrp55-getallconf-main'    => 'vrpSpotConfigText',
 	'vrp85-getlldpstatus-main' => 'vrpReadLLDPStatus',
 	'vrp85-get8021q-main'      => 'vrp85Read8021QConfig',
 	'vrp85-getportstatus-main' => 'vrpReadInterfaceStatus',
 	'vrp85-getmaclist-main'    => 'vrpReadMacList',
+	'vrp85-getportmaclist-main'=> 'vrpReadMacList',
 	'vrp85-xlatepushq-main'    => 'vrp85TranslatePushQueue',
 	'vrp85-getallconf-main'    => 'vrpSpotConfigText',
 	'nxos4-getcdpstatus-main'  => 'ios12ReadCDPStatus',
@@ -51,6 +55,7 @@ $breedfunc = array
 	'nxos4-get8021q-main'      => 'ios12ReadVLANConfig',
 	'nxos4-getportstatus-main' => 'ciscoReadInterfaceStatus',
 	'nxos4-getmaclist-main'    => 'nxos4ReadMacList',
+	'nxos4-getportmaclist-main'=> 'nxos4ReadMacList',
 	'nxos4-xlatepushq-main'    => 'nxos4TranslatePushQueue',
 	'nxos4-getallconf-main'    => 'nxos4SpotConfigText',
 	'dlink-get8021q-main'      => 'dlinkReadVLANConfig',
@@ -58,10 +63,12 @@ $breedfunc = array
 	'dlink-get8021q-pickvlan'  => 'dlinkPickVLANCommand',
 	'dlink-getportstatus-main' => 'dlinkReadInterfaceStatus',
 	'dlink-getmaclist-main'    => 'dlinkReadMacList',
+	'dlink-getportmaclist-main'=> 'dlinkReadMacList',
 	'dlink-xlatepushq-main'    => 'dlinkTranslatePushQueue',
 	'linux-get8021q-main'      => 'linuxReadVLANConfig',
 	'linux-getportstatus-main' => 'linuxReadInterfaceStatus',
 	'linux-getmaclist-main'    => 'linuxReadMacList',
+	'linux-getportmaclist-main'=> 'linuxReadMacList',
 	'linux-xlatepushq-main'    => 'linuxTranslatePushQueue',
 	'xos12-getlldpstatus-main' => 'xos12ReadLLDPStatus',
 	'xos12-get8021q-main'      => 'xos12Read8021QConfig',
@@ -71,9 +78,11 @@ $breedfunc = array
 	'jun10-xlatepushq-main'    => 'jun10TranslatePushQueue',
 	'jun10-getallconf-main'    => 'jun10SpotConfigText',
 	'jun10-getlldpstatus-main' => 'jun10ReadLLDPStatus',
+	'jun10-getportstatus-main' => 'jun10ReadInterfaceStatus',
 	'ftos8-xlatepushq-main'    => 'ftos8TranslatePushQueue',
 	'ftos8-getlldpstatus-main' => 'ftos8ReadLLDPStatus',
 	'ftos8-getmaclist-main'    => 'ftos8ReadMacList',
+	'ftos8-getportmaclist-main'=> 'ftos8ReadMacList',
 	'ftos8-getportstatus-main' => 'ftos8ReadInterfaceStatus',
 	'ftos8-get8021q-main'      => 'ftos8Read8021QConfig',
 	'ftos8-getallconf-main'    => 'ftos8SpotConfigText',
@@ -81,6 +90,7 @@ $breedfunc = array
 	'air12-getallconf-main'    => 'ios12SpotConfigText',
 	'eos4-getallconf-main'     => 'eos4SpotConfigText',
 	'eos4-getmaclist-main'     => 'eos4ReadMacList',
+	'eos4-getportmaclist-main' => 'eos4ReadMacList',
 	'eos4-getportstatus-main'  => 'eos4ReadInterfaceStatus',
 	'eos4-getlldpstatus-main'  => 'eos4ReadLLDPStatus',
 	'eos4-get8021q-main'       => 'eos4Read8021QConfig',
@@ -90,6 +100,7 @@ $breedfunc = array
 	'ros11-getlldpstatus-main' => 'ros11ReadLLDPStatus',
 	'ros11-getportstatus-main' => 'ros11ReadInterfaceStatus',
 	'ros11-getmaclist-main'    => 'ros11ReadMacList',
+	'ros11-getportmaclist-main'=> 'ros11ReadMacList',
 	'ros11-get8021q-main'      => 'ros11Read8021QConfig',
 	'ros11-get8021q-scantop'   => 'ros11Read8021QScanTop',
 	'ros11-get8021q-vlandb'    => 'ros11Read8021QVLANDatabase',
@@ -116,6 +127,7 @@ $breed_by_swcode = array
 	1901 => 'ios12', // IOS 15.0
 	1963 => 'ios12', // IOS 15.1 (router OS)
 	2082 => 'ios12', // IOS 15.1
+	2142 => 'ios12', // IOS 15.2
 	963  => 'nxos4', // NX-OS 4.0
 	964  => 'nxos4', // NX-OS 4.1
 	1365 => 'nxos4', // NX-OS 4.2
@@ -205,9 +217,20 @@ function assertBreedFunction ($breed, $command)
 	return $breedfunc["${breed}-${command}-main"];
 }
 
-function queryDevice ($object_id, $command)
+function queryDevice ($object_id, $command, $args = array())
 {
-	$query = translateDeviceCommands ($object_id, array (array ('opcode' => $command)));
+	$ret = NULL;
+	$request = array ('opcode' => $command);
+	if (is_array ($args) && count ($args))
+	{
+		$i = 1;
+		foreach ($args as $arg)
+		{
+			$request["arg$i"] = $arg;
+			$i++;
+		}
+	}
+	$query = translateDeviceCommands ($object_id, array ($request));
 	if ($command == 'xlatepushq')
 		return $query;
 	$breed = assertDeviceBreed ($object_id);
@@ -241,6 +264,8 @@ function queryDevice ($object_id, $command)
 
 	if (NULL !== ($subst = callHook ('alterDeviceQueryResult', $ret, $object_id, $command)))
 		$ret = $subst;
+	if (! isset ($ret))
+		throw new RTGatewayError ("No result from $command");
 	return $ret;
 }
 
@@ -492,7 +517,7 @@ function queryTerminal ($object_id, $commands, $tolerate_remote_errors = TRUE)
 
 function callScript ($gwname, $params, $in, &$out, &$errors)
 {
-	global $racktables_gwdir, $local_gwdir, $gateway_log;
+	global $racktables_gwdir, $local_gwdir, $gateway_log, $script_child_res;
 	if (isset ($gateway_log))
 		$gateway_log = '';
 
@@ -542,6 +567,7 @@ function callScript ($gwname, $params, $in, &$out, &$errors)
 	);
 	if (! is_resource ($child))
 		throw new RTGatewayError ("cant execute $binary");
+	$script_child_res = $child;
 
 	$buff_size = 4096;
 	$write_left = array ($pipes[0]);
@@ -598,6 +624,12 @@ function callScript ($gwname, $params, $in, &$out, &$errors)
 			$gateway_log = substr ($gateway_log, -MAX_GW_LOGSIZE);
 
 	}
+	// we need to destroy our global link to the resource here.
+	// PHP's proc_close implementation does nothing itself: it only returns
+	// the value saved by the resource destructor. If the resource was not
+	// destroyed (refcnt > 0), the return value is incorrect.
+	$script_child_res = NULL;
+
 	return proc_close ($child);
 }
 
@@ -635,6 +667,10 @@ function setDevice8021QConfig ($object_id, $pseudocode, $vlan_names)
 // (i.e. some function in deviceconfig.php)
 function shortenIfName ($if_name, $breed = NULL, $object_id = NULL)
 {
+	// this is a port name we invented in snmp.php, do not translate it
+	if (preg_match ('/^AC-in(-[12])?$/', $if_name))
+		return $if_name;
+
 	global $current_query_breed;
 	if (! isset ($breed))
 	{
@@ -643,6 +679,7 @@ function shortenIfName ($if_name, $breed = NULL, $object_id = NULL)
 		elseif (isset ($current_query_breed))
 			$breed = $current_query_breed;
 	}
+
 	switch ($breed)
 	{
 		case 'ios12':

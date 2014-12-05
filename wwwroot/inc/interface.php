@@ -663,7 +663,7 @@ function renderRow ($row_id)
 	$summary['Racks'] = $rowInfo['count'];
 	$summary['Units'] = $rowInfo['sum'];
 	$summary['% used'] = getProgressBar (getRSUforRow ($rackList));
-	foreach (getAttrValues ($row_id) as $record)
+	foreach (getAttrValuesSorted ($row_id) as $record)
 		if
 		(
 			$record['value'] != '' and
@@ -729,7 +729,7 @@ function renderEditRowForm ($row_id)
 	echo "<tr><td>&nbsp;</td><th class=tdright>Name (required):</th><td class=tdleft><input type=text name=name value='${row['name']}'></td></tr>\n";
 
 	// optional attributes
-	$values = getAttrValues ($row_id);
+	$values = getAttrValuesSorted ($row_id);
 	$num_attrs = count ($values);
 	echo "<input type=hidden name=num_attrs value=${num_attrs}>\n";
 	$i = 0;
@@ -1088,7 +1088,7 @@ function renderEditObjectForm()
 	}
 	// optional attributes
 	$i = 0;
-	$values = getAttrValues ($object_id);
+	$values = getAttrValuesSorted ($object_id);
 	if (count($values) > 0)
 	{
 		foreach ($values as $record)
@@ -1180,7 +1180,7 @@ function renderEditRackForm ($rack_id)
 	printTagsPicker ();
 	echo "</td></tr>\n";
 	// optional attributes
-	$values = getAttrValues ($rack_id);
+	$values = getAttrValuesSorted ($rack_id);
 	$num_attrs = count($values);
 	$num_attrs = $num_attrs-2; // subtract for the 'height' and 'sort_order' attributes
 	echo "<input type=hidden name=num_attrs value=${num_attrs}>\n";
@@ -1238,6 +1238,35 @@ function renderEditRackForm ($rack_id)
 	finishPortlet();
 }
 
+// populates the $summary array with the sum of power attributes of the objects mounted into the rack
+function populateRackPower ($rackData, &$summary)
+{
+	$power_attrs = array(
+		7, // 'float','max. current, Ampers'
+		13, // 'float','max power, Watts'
+	);
+	$sum = array();
+	if (! isset ($rackData['mountedObjects']))
+		amplifyCell ($rackData);
+	foreach ($rackData['mountedObjects'] as $object_id)
+	{
+		$attrs = getAttrValues ($object_id);
+		foreach ($power_attrs as $attr_id)
+			if (isset ($attrs[$attr_id]) && $attrs[$attr_id]['type'] == 'float')
+			{
+				if (! isset ($sum[$attr_id]))
+				{
+					$sum[$attr_id]['sum'] = 0.0;
+					$sum[$attr_id]['name'] = $attrs[$attr_id]['name'];
+				}
+				$sum[$attr_id]['sum'] += $attrs[$attr_id]['value'];
+			}
+	}
+	foreach ($sum as $attr)
+		if ($attr['sum'] > 0.0)
+			$summary[$attr['name']] = $attr['sum'];
+}
+
 // used by renderGridForm() and renderRackPage()
 function renderRackInfoPortlet ($rackData)
 {
@@ -1249,17 +1278,22 @@ function renderRackInfoPortlet ($rackData)
 		$summary['Asset tag'] = $rackData['asset_no'];
 	if ($rackData['has_problems'] == 'yes')
 		$summary[] = array ('<tr><td colspan=2 class=msg_error>Has problems</td></tr>');
+	populateRackPower ($rackData, $summary);
 	// Display populated attributes, but skip 'height' since it's already displayed above
 	// and skip 'sort_order' because it's modified using AJAX
-	foreach (getAttrValues ($rackData['id']) as $record)
+	foreach (getAttrValuesSorted ($rackData['id']) as $record)
 		if ($record['id'] != 27 && $record['id'] != 29 && strlen ($record['value']))
 			$summary['{sticker}' . $record['name']] = formatAttributeValue ($record);
 	$summary['% used'] = getProgressBar (getRSUforRack ($rackData));
 	$summary['Objects'] = count ($rackData['mountedObjects']);
 	$summary['tags'] = '';
-	if (strlen ($rackData['comment']))
-		$summary['Comment'] = $rackData['comment'];
 	renderEntitySummary ($rackData, 'summary', $summary);
+	if ($rackData['comment'] != '')
+	{
+		startPortlet ('Comment');
+		echo '<div class=commentblock>' . string_insert_hrefs ($rackData['comment']) . '</div>';
+		finishPortlet ();
+	}
 }
 
 // This is a universal editor of rack design/waste.
@@ -1311,11 +1345,15 @@ function renderRackProblems ($rack_id)
 
 function renderObjectPortRow ($port, $is_highlighted)
 {
+	// highlight port name with yellow if it's name is not canonical
+	$canon_pn = shortenPortName ($port['name'], $port['object_id']);
+	$name_class = $canon_pn == $port['name'] ? '' : 'trwarning';
+
 	echo '<tr';
 	if ($is_highlighted)
 		echo ' class=highlight';
 	$a_class = isEthernetPort ($port) ? 'port-menu' : '';
-	echo "><td class='tdleft' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
+	echo "><td class='tdleft $name_class' NOWRAP><a name='port-${port['id']}' class='interactive-portname nolink $a_class'>${port['name']}</a></td>";
 	echo "<td class=tdleft>${port['label']}</td>";
 	echo "<td class=tdleft>" . formatPortIIFOIF ($port) . "</td><td class=tdleft><tt>${port['l2address']}</tt></td>";
 	if ($port['remote_object_id'])
@@ -1380,7 +1418,7 @@ function renderObject ($object_id)
 	}
 	if ($info['has_problems'] == 'yes')
 		$summary[] = array ('<tr><td colspan=2 class=msg_error>Has problems</td></tr>');
-	foreach (getAttrValues ($object_id) as $record)
+	foreach (getAttrValuesSorted ($object_id) as $record)
 		if
 		(
 			strlen ($record['value']) and
@@ -1652,6 +1690,14 @@ function renderPortsForObject ($object_id)
 	// clear ports link
 	echo getOpLink (array ('op'=>'deleteAll'), 'Clear port list', 'clear', '', 'need-confirmation');
 
+	// rename ports link
+	$n_ports_to_rename = 0;
+	foreach ($object['ports'] as $port)
+		if ($port['name'] != shortenPortName ($port['name'], $object['id']))
+			$n_ports_to_rename++;
+	if ($n_ports_to_rename)
+		echo '<p>' . getOpLink (array ('op'=>'renameAll'), "Auto-rename $n_ports_to_rename ports", 'recalc', 'Use RackTables naming convention for this device type') . '</p>';
+
 	if (isset ($_REQUEST['hl_port_id']))
 	{
 		assertUIntArg ('hl_port_id');
@@ -1661,13 +1707,17 @@ function renderPortsForObject ($object_id)
 	switchportInfoJS ($object_id); // load JS code to make portnames interactive
 	foreach ($object['ports'] as $port)
 	{
+		// highlight port name with yellow if it's name is not canonical
+		$canon_pn = shortenPortName ($port['name'], $port['object_id']);
+		$name_class = $canon_pn == $port['name'] ? '' : 'trwarning';
+
 		$tr_class = isset ($hl_port_id) && $hl_port_id == $port['id'] ? 'class="highlight"' : '';
 		printOpFormIntro ('editPort', array ('port_id' => $port['id']));
 		echo "<tr $tr_class><td><a name='port-${port['id']}' href='".makeHrefProcess(array('op'=>'delPort', 'port_id'=>$port['id']))."'>";
 		printImageHREF ('delete', 'Unlink and Delete this port');
 		echo "</a></td>\n";
 		$a_class = isEthernetPort ($port) ? 'port-menu' : '';
-		echo "<td class='tdleft' NOWRAP><input type=text name=name class='interactive-portname $a_class' value='${port['name']}' size=8></td>";
+		echo "<td class='tdleft $name_class' NOWRAP><input type=text name=name class='interactive-portname $a_class' value='${port['name']}' size=8></td>";
 		echo "<td><input type=text name=label value='${port['label']}'></td>";
 		echo '<td>';
 		if ($port['iif_id'] != 1)
@@ -2537,8 +2587,15 @@ function renderIPSpace()
 				echo "collapsing all ($all / $auto)";
 			else
 			{
-				$netinfo = spotEntity ($realm, $eid);
-				echo "expanding ${netinfo['ip']}/${netinfo['mask']} ($auto / $all / $none)";
+				try
+				{
+					$netinfo = spotEntity ($realm, $eid);
+					echo "expanding ${netinfo['ip']}/${netinfo['mask']} ($auto / $all / $none)";
+				}
+				catch (EntityNotFoundException $e)
+				{
+					// ignore invalid eid error
+				}
 			}
 			echo "</h4><table class='widetable' border=0 cellpadding=5 cellspacing=0 align='center'>\n";
 			echo "<tr><th>prefix</th><th>name/tags</th><th>capacity</th>";
@@ -3757,7 +3814,10 @@ function renderCellList ($realm = NULL, $title = 'items', $do_amplify = FALSE, $
 	global $nextorder;
 	$order = 'odd';
 	$cellfilter = getCellFilter();
-	$celllist = applyCellFilter ($realm, $cellfilter);
+	if (! isset ($celllist))
+		$celllist = applyCellFilter ($realm, $cellfilter);
+	else
+		$celllist = filterCellList ($celllist, $cellfilter['expression']);
 
 	echo "<table border=0 class=objectview>\n";
 	echo "<tr><td class=pcleft>";
@@ -3813,13 +3873,13 @@ function renderUserListEditor ()
 	$accounts = listCells ('user');
 	startPortlet ('Manage existing (' . count ($accounts) . ')');
 	echo '<table cellspacing=0 cellpadding=5 align=center class=widetable>';
-	echo '<tr><th>Username</th><th>Real name</th><th>Password</th><th>&nbsp;</th></tr>';
+	echo '<tr><th>Username</th><th>Real name</th><th>New password (use old if blank)</th><th>&nbsp;</th></tr>';
 	foreach ($accounts as $account)
 	{
 		printOpFormIntro ('updateUser', array ('user_id' => $account['user_id']));
 		echo "<tr><td><input type=text name=username value='${account['user_name']}' size=16></td>";
 		echo "<td><input type=text name=realname value='${account['user_realname']}' size=24></td>";
-		echo "<td><input type=password name=password value='${account['user_password_hash']}' size=40></td><td>";
+		echo "<td><input type=password name=password size=40></td><td>";
 		printImageHREF ('save', 'Save changes', TRUE);
 		echo '</td></form></tr>';
 	}
@@ -3856,9 +3916,9 @@ function renderOIFCompatEditor()
 		echo '<tr><th class=tdleft>';
 		printImageHREF ('add', 'add pair', TRUE);
 		echo '</th><th class=tdleft>';
-		printSelect (readChapter (CHAP_PORTTYPE), array ('name' => 'type1'));
+		printSelect (getPortOIFOptions(), array ('name' => 'type1'));
 		echo '</th><th class=tdleft>';
-		printSelect (readChapter (CHAP_PORTTYPE), array ('name' => 'type2'));
+		printSelect (getPortOIFOptions(), array ('name' => 'type2'));
 		echo '</th></tr></form>';
 	}
 
@@ -3994,7 +4054,7 @@ function renderLocationPage ($location_id)
 	$summary['Rows'] = count($locationData['rows']);
 	if ($locationData['has_problems'] == 'yes')
 		$summary[] = array ('<tr><td colspan=2 class=msg_error>Has problems</td></tr>');
-	foreach (getAttrValues ($locationData['id']) as $record)
+	foreach (getAttrValuesSorted ($locationData['id']) as $record)
 		if
 		(
 			$record['value'] != '' and
@@ -4002,9 +4062,13 @@ function renderLocationPage ($location_id)
 		)
 			$summary['{sticker}' . $record['name']] = formatAttributeValue ($record);
 	$summary['tags'] = '';
-	if (strlen ($locationData['comment']))
-		$summary['Comment'] = $locationData['comment'];
 	renderEntitySummary ($locationData, 'Summary', $summary);
+	if ($locationData['comment'] != '')
+	{
+		startPortlet ('Comment');
+		echo '<div class=commentblock>' . string_insert_hrefs ($locationData['comment']) . '</div>';
+		finishPortlet ();
+	}
 	renderFilesPortlet ('location', $location_id);
 	echo '</td>';
 
@@ -4048,7 +4112,7 @@ function renderEditLocationForm ($location_id)
 	printTagsPicker ();
 	echo "</td></tr>\n";
 	// optional attributes
-	$values = getAttrValues ($location_id);
+	$values = getAttrValuesSorted ($location_id);
 	$num_attrs = count($values);
 	echo "<input type=hidden name=num_attrs value=${num_attrs}>\n";
 	$i = 0;
@@ -4151,7 +4215,7 @@ function renderChapter ($tgt_chapter_no)
 	{
 		echo "<tr class=row_${order}><td>";
 		printImageHREF ($key < 50000 ? 'computer' : 'favorite');
-		echo "</td><td>${key}</td><td>";
+		echo "</td><td class=tdright>${key}</td><td>";
 		if ($refcnt[$key])
 		{
 			$cfe = '';
@@ -4213,12 +4277,12 @@ function renderChapterEditor ($tgt_chapter_no)
 		if ($key < 50000)
 		{
 			printImageHREF ('computer');
-			echo "</td><td>${key}</td><td>&nbsp;</td><td>${value}</td><td>&nbsp;</td></tr>";
+			echo "</td><td class=tdright>${key}</td><td>&nbsp;</td><td>${value}</td><td>&nbsp;</td></tr>";
 			continue;
 		}
 		printOpFormIntro ('upd', array ('dict_key' => $key));
 		printImageHREF ('favorite');
-		echo "</td><td>${key}</td><td>";
+		echo "</td><td class=tdright>${key}</td><td>";
 		// Prevent deleting words currently used somewhere.
 		if ($refcnt[$key])
 			printImageHREF ('nodelete', 'referenced ' . $refcnt[$key] . ' time(s)');
@@ -4232,6 +4296,85 @@ function renderChapterEditor ($tgt_chapter_no)
 	if (getConfigVar ('ADDNEW_AT_TOP') != 'yes')
 		printNewItemTR();
 	echo "</table>\n";
+}
+
+function renderPortOIFViewer()
+{
+	global $nextorder;
+	echo '<br><table class=cooltable align=center border=0 cellpadding=5 cellspacing=0>';
+	echo '<tr><th>Origin</th><th>Key</th><th>Refcnt</th><th>Outer Interface</th></tr>';
+	$order = 'odd';
+	$refcnt = getPortOIFRefc();
+	foreach (getPortOIFOptions() as $oif_id => $oif_name)
+	{
+		echo "<tr class=row_${order}>";
+		echo '<td class=tdleft>' . getImageHREF ($oif_id < 2000 ? 'computer' : 'favorite') . '</td>';
+		echo "<td class=tdright>${oif_id}</td>";
+		echo '<td class=tdright>' . ($refcnt[$oif_id] ? $refcnt[$oif_id] : '&nbsp;') . '</td>';
+		echo '<td class=tdleft>' . niftyString ($oif_name, 48) . '</td>';
+		echo '</tr>';
+		$order = $nextorder[$order];
+	}
+	echo '</table>';
+}
+
+function renderPortOIFEditor()
+{
+	function printNewitemTR()
+	{
+		printOpFormIntro ('add');
+		echo '<tr>';
+		echo '<td>&nbsp;</td>';
+		echo '<td>&nbsp;</td>';
+		echo '<td>&nbsp;</td>';
+		echo '<td class=tdleft>' . getImageHREF ('create', 'create new', TRUE, 110) . '</td>';
+		echo '<td class=tdleft><input type=text size=48 name=oif_name tabindex=100></td>';
+		echo '<td class=tdleft>' . getImageHREF ('create', 'create new', TRUE, 110) . '</td>';
+		echo '</tr></form>';
+	}
+	echo '<table class=widetable border=0 cellpadding=5 cellspacing=0 align=center>';
+	echo '<tr><th class=tdleft>Origin</th><th>Key</th><th>Refcnt</th><th>&nbsp;</th><th>Outer Interface</th><th>&nbsp;</th></tr>';
+	if (getConfigVar ('ADDNEW_AT_TOP') == 'yes')
+		printNewitemTR();
+	$refcnt = getPortOIFRefc();
+	foreach (getPortOIFOptions() as $oif_id => $oif_name)
+	{
+		echo '<tr>';
+		if ($oif_id < 2000)
+		{
+			echo '<td class=tdleft>' . getImageHREF ('computer') . '</td>';
+			echo "<td class=tdleft>${oif_id}</td>";
+			echo '<td class=tdright>' . ($refcnt[$oif_id] ? $refcnt[$oif_id] : '&nbsp;') . '</td>';
+			echo '<td>&nbsp;</td>';
+			echo '<td class=tdleft>' . niftyString ($oif_name, 48) . '</td>';
+			echo '<td>&nbsp;</td>';
+		}
+		else
+		{
+			printOpFormIntro ('upd', array ('id' => $oif_id));
+			echo '<td class=tdleft>' . getImageHREF ('favorite') . '</td>';
+			echo "<td class=tdleft>${oif_id}</td>";
+			if ($refcnt[$oif_id])
+			{
+				echo "<td class=tdright>${refcnt[$oif_id]}</td>";
+				echo '<td class=tdleft>' . getImageHREF ('nodestroy', 'cannot remove') . '</td>';
+			}
+			else
+			{
+				echo '<td>&nbsp;</td>';
+				echo '<td class=tdleft>';
+				echo getOpLink (array ('op' => 'del', 'id' => $oif_id), '', 'destroy', 'remove');
+				echo '</td>';
+			}
+			echo '<td class=tdleft><input type=text size=48 name=oif_name value="' . niftyString ($oif_name, 48) . '"></td>';
+			echo '<td>' . getImageHREF ('save', 'Save changes', TRUE) . '</td>';
+			echo '</form>';
+		}
+		echo '</tr>';
+	}
+	if (getConfigVar ('ADDNEW_AT_TOP') != 'yes')
+		printNewitemTR();
+	echo '</table>';
 }
 
 // We don't allow to rename/delete a sticky chapter and we don't allow
@@ -4327,7 +4470,7 @@ function renderEditAttributesForm ()
 		global $attrtypes;
 		printSelect ($attrtypes, array ('name' => 'attr_type', 'tabindex' => 101));
 		echo '</td><td>';
-		printImageHREF ('add', 'Create attribute', TRUE, 102);
+		printImageHREF ('create', 'Create attribute', TRUE, 102);
 		echo '</td></tr></form>';
 	}
 	startPortlet ('Optional attributes');
@@ -4509,13 +4652,13 @@ function renderPortsReport ()
 {
 	$tmp = array();
 	foreach (getPortIIFOptions() as $iif_id => $iif_name)
-		if (count (getPortIIFStats (array ($iif_id))))
+		if (count (getPortIIFStats ($iif_id)))
 			$tmp[] = array
 			(
 				'title' => $iif_name,
 				'type' => 'meters',
 				'func' => 'getPortIIFStats',
-				'args' => array ($iif_id),
+				'args' => $iif_id,
 			);
 	renderReports ($tmp);
 }
@@ -4820,6 +4963,7 @@ function renderLivePTR ($id)
 	$maxperpage = getConfigVar ('IPV4_ADDRS_PER_PAGE');
 	$range = spotEntity ('ipv4net', $id);
 	loadIPAddrList ($range);
+	$can_import = permitted (NULL, NULL, 'importPTRData');
 	echo "<center><h1>${range['ip']}/${range['mask']}</h1><h2>${range['name']}</h2></center>\n";
 
 	echo "<table class=objview border=0 width='100%'><tr><td class=pcleft>";
@@ -4844,12 +4988,18 @@ function renderLivePTR ($id)
 	echo "</center>";
 
 	// FIXME: address counter could be calculated incorrectly in some cases
-	printOpFormIntro ('importPTRData', array ('addrcount' => ($endip - $startip + 1)));
+	if ($can_import)
+	{
+		printOpFormIntro ('importPTRData', array ('addrcount' => ($endip - $startip + 1)));
+		$idx = 1;
+		$box_counter = 1;
+	}
 
 	echo "<table class='widetable' border=0 cellspacing=0 cellpadding=5 align='center'>\n";
-	echo "<tr><th>address</th><th>current name</th><th>DNS data</th><th>import</th></tr>\n";
-	$idx = 1;
-	$box_counter = 1;
+	echo '<tr><th>address</th><th>current name</th><th>DNS data</th>';
+	if ($can_import)
+		echo '<th>import</th>';
+	echo '</tr>';
 	$cnt_match = $cnt_mismatch = $cnt_missing = 0;
 	for ($ip = $startip; $ip <= $endip; $ip++)
 	{
@@ -4861,9 +5011,12 @@ function renderLivePTR ($id)
 		$ptrname = gethostbyaddr ($straddr);
 		if ($ptrname == $straddr)
 			$ptrname = '';
-		echo "<input type=hidden name=addr_${idx} value=${straddr}>\n";
-		echo "<input type=hidden name=descr_${idx} value=${ptrname}>\n";
-		echo "<input type=hidden name=rsvd_${idx} value=${addr['reserved']}>\n";
+		if ($can_import)
+		{
+			echo "<input type=hidden name=addr_${idx} value=${straddr}>\n";
+			echo "<input type=hidden name=descr_${idx} value=${ptrname}>\n";
+			echo "<input type=hidden name=rsvd_${idx} value=${addr['reserved']}>\n";
+		}
 		echo '<tr';
 		$print_cbox = FALSE;
 		// Ignore network and broadcast addresses
@@ -4893,20 +5046,29 @@ function renderLivePTR ($id)
 		if (isset ($range['addrlist'][$ip_bin]['class']) and strlen ($range['addrlist'][$ip_bin]['class']))
 			echo ' ' . $range['addrlist'][$ip_bin]['class'];
 		echo "'>" . mkA ($straddr, 'ipaddress', $straddr) . '</td>';
-		echo "<td class=tdleft>${addr['name']}</td><td class=tdleft>${ptrname}</td><td>";
-		if ($print_cbox)
-			echo "<input type=checkbox name=import_${idx} tabindex=${idx} id=atom_1_" . $box_counter++ . "_1>";
-		else
-			echo '&nbsp;';
-		echo "</td></tr>\n";
-		$idx++;
+		echo "<td class=tdleft>${addr['name']}</td><td class=tdleft>${ptrname}</td>";
+		if ($can_import)
+		{
+			echo '<td>';
+			if ($print_cbox)
+				echo "<input type=checkbox name=import_${idx} tabindex=${idx} id=atom_1_" . $box_counter++ . "_1>";
+			else
+				echo '&nbsp;';
+			echo '</td>';
+			$idx++;
+		}
+		echo "</tr>\n";
 	}
-	echo "<tr><td colspan=3 align=center><input type=submit value='Import selected records'></td><td>";
-	addJS ('js/racktables.js');
-	echo --$box_counter ? "<a href='javascript:;' onclick=\"toggleColumnOfAtoms(1, 1, ${box_counter})\">(toggle selection)</a>" : '&nbsp;';
-	echo "</td></tr>";
+	if ($can_import && $box_counter > 1)
+	{
+		echo '<tr><td colspan=3 align=center><input type=submit value="Import selected records"></td><td>';
+		addJS ('js/racktables.js');
+		echo --$box_counter ? "<a href='javascript:;' onclick=\"toggleColumnOfAtoms(1, 1, ${box_counter})\">(toggle selection)</a>" : '&nbsp;';
+		echo '</td></tr>';
+	}
 	echo "</table>";
-	echo "</form>";
+	if ($can_import)
+		echo '</form>';
 	finishPortlet();
 
 	echo "</td><td class=pcright>";
@@ -4926,7 +5088,7 @@ function renderLivePTR ($id)
 function renderAutoPortsForm ($object_id)
 {
 	$info = spotEntity ('object', $object_id);
-	$ptlist = readChapter (CHAP_PORTTYPE, 'a');
+	$ptlist = getPortOIFOptions();
 	echo "<table class='widetable' border=0 cellspacing=0 cellpadding=5 align='center'>\n";
 	echo "<caption>The following ports can be quickly added:</caption>";
 	echo "<tr><th>type</th><th>name</th></tr>";
@@ -6492,39 +6654,97 @@ function dynamic_title_decoder ($path_position)
 	}
 }
 
-function renderIIFOIFCompat()
+function renderTwoColumnCompatTableViewer ($compat, $left, $right)
 {
 	global $nextorder;
-	echo '<br><table class=cooltable align=center border=0 cellpadding=5 cellspacing=0>';
-	echo '<tr><th class=tdleft>inner interface</th><th></th><th class=tdleft>outer interface</th><th></th></tr>';
-	$last_iif_id = 0;
-	$order = 'even';
-	foreach (getPortInterfaceCompat() as $record)
+	$last_lkey = NULL;
+	$order = 'odd';
+	echo '<table class=cooltable align=center border=0 cellpadding=5 cellspacing=0>';
+	echo "<tr><th>Key</th><th class=tdleft>${left['header']}</th><th>Key</th><th class=tdleft>${right['header']}</th></tr>";
+	foreach ($compat as $item)
 	{
-		if ($last_iif_id != $record['iif_id'])
+		if ($last_lkey !== $item[$left['key']])
 		{
 			$order = $nextorder[$order];
-			$last_iif_id = $record['iif_id'];
+			$last_lkey = $item[$left['key']];
 		}
-		echo "<tr class=row_${order}><td class=tdleft>${record['iif_name']}</td><td>${record['iif_id']}</td><td class=tdleft>${record['oif_name']}</td><td>${record['oif_id']}</td></tr>";
+		echo "<tr class=row_${order}>";
+		echo "<td class=tdright>${item[$left['key']]}</td>";
+		echo '<td class=tdleft>' . niftyString ($item[$left['value']], $left['width']) . '</td>';
+		echo "<td class=tdright>${item[$right['key']]}</td>";
+		echo '<td class=tdleft>' . niftyString ($item[$right['value']], $right['width']) . '</td>';
+		echo '</tr>';
 	}
+	echo '</table>';
+}
+
+function renderIIFOIFCompat()
+{
+	echo '<br>';
+	renderTwoColumnCompatTableViewer
+	(
+		getPortInterfaceCompat(),
+		array
+		(
+			'header' => 'Inner interface',
+			'key' => 'iif_id',
+			'value' => 'iif_name',
+			'width' => 16,
+		),
+		array
+		(
+			'header' => 'Outer interface',
+			'key' => 'oif_id',
+			'value' => 'oif_name',
+			'width' => 48,
+		)
+	);
+	echo '<br>';
+}
+
+function renderTwoColumnCompatTableEditor ($compat, $left, $right)
+{
+	function printNewitemTR ($lkey, $loptions, $rkey, $roptions)
+	{
+		printOpFormIntro ('add');
+		echo '<tr><th class=tdleft>';
+		printImageHREF ('add', 'add pair', TRUE, 200);
+		echo '</th><th class=tdleft>';
+		printSelect ($loptions, array ('name' => $lkey, 'tabindex' => 100));
+		echo '</th><th class=tdleft>';
+		printSelect ($roptions, array ('name' => $rkey, 'tabindex' => 110));
+		echo '</th></tr></form>';
+	}
+
+	global $nextorder;
+	$last_lkey = NULL;
+	$order = 'odd';
+	echo '<table class=cooltable align=center border=0 cellpadding=5 cellspacing=0>';
+	echo "<tr><th>&nbsp;</th><th class=tdleft>${left['header']}</th><th class=tdleft>${right['header']}</th></tr>";
+	if (getConfigVar ('ADDNEW_AT_TOP') == 'yes')
+		printNewitemTR ($left['key'], $left['options'], $right['key'], $right['options']);
+	foreach ($compat as $item)
+	{
+		if ($last_lkey !== $item[$left['key']])
+		{
+			$order = $nextorder[$order];
+			$last_lkey = $item[$left['key']];
+		}
+		echo "<tr class=row_${order}>";
+		echo '<td>';
+		echo getOpLink (array ('op' => 'del', $left['key'] => $item[$left['key']], $right['key'] => $item[$right['key']]), '', 'delete', 'remove pair');
+		echo '</td>';
+		echo '<td class=tdleft>' . niftyString ($item[$left['value']], $left['width']) . '</td>';
+		echo '<td class=tdleft>' . niftyString ($item[$right['value']], $right['width']) . '</td>';
+		echo '</tr>';
+	}
+	if (getConfigVar ('ADDNEW_AT_TOP') != 'yes')
+		printNewitemTR ($left['key'], $left['options'], $right['key'], $right['options']);
 	echo '</table>';
 }
 
 function renderIIFOIFCompatEditor()
 {
-	function printNewitemTR()
-	{
-		printOpFormIntro ('add');
-		echo '<tr><th class=tdleft>';
-		printImageHREF ('add', 'add pair', TRUE);
-		echo '</th><th class=tdleft>';
-		printSelect (getPortIIFOptions(), array ('name' => 'iif_id'));
-		echo '</th><th class=tdleft>';
-		printSelect (readChapter (CHAP_PORTTYPE), array ('name' => 'oif_id'));
-		echo '</th></tr></form>';
-	}
-
 	startPortlet ('WDM standard by interface');
 	$iif = getPortIIFOptions();
 	global $nextorder, $wdm_packs;
@@ -6547,27 +6767,26 @@ function renderIIFOIFCompatEditor()
 	finishPortlet();
 
 	startPortlet ('interface by interface');
-	global $nextorder;
-	$last_iif_id = 0;
-	$order = 'even';
-	echo '<br><table class=cooltable align=center border=0 cellpadding=5 cellspacing=0>';
-	echo '<tr><th>&nbsp;</th><th class=tdleft>inner interface</th><th class=tdleft>outer interface</th></tr>';
-	if (getConfigVar ('ADDNEW_AT_TOP') == 'yes')
-		printNewitemTR();
-	foreach (getPortInterfaceCompat() as $record)
-	{
-		if ($last_iif_id != $record['iif_id'])
-		{
-			$order = $nextorder[$order];
-			$last_iif_id = $record['iif_id'];
-		}
-		echo "<tr class=row_${order}><td>";
-		echo getOpLink (array ('op' => 'del', 'iif_id' => $record['iif_id'], 'oif_id' => $record['oif_id']), '', 'delete', 'remove pair');
-		echo "</td><td class=tdleft>${record['iif_name']}</td><td class=tdleft>${record['oif_name']}</td></tr>";
-	}
-	if (getConfigVar ('ADDNEW_AT_TOP') != 'yes')
-		printNewitemTR();
-	echo '</table>';
+	renderTwoColumnCompatTableEditor
+	(
+		getPortInterfaceCompat(),
+		array
+		(
+			'header' => 'inner interface',
+			'key' => 'iif_id',
+			'value' => 'iif_name',
+			'width' => 16,
+			'options' => getPortIIFOptions(),
+		),
+		array
+		(
+			'header' => 'outer interface',
+			'key' => 'oif_id',
+			'value' => 'oif_name',
+			'width' => 48,
+			'options' => getPortOIFOptions()
+		)
+	);
 	finishPortlet();
 }
 
@@ -8606,6 +8825,7 @@ function switchportInfoJS($object_id)
 		'link' => array ('op' => 'get_link_status', 'gw' => 'getportstatus'),
 		'conf' => array ('op' => 'get_port_conf', 'gw' => 'get8021q'),
 		'mac' =>  array ('op' => 'get_mac_list', 'gw' => 'getmaclist'),
+		'portmac' => array ('op' => 'get_port_mac_list', 'gw' => 'getportmaclist'),
 	);
 	$breed = detectDeviceBreed ($object_id);
 	$allowed_ops = array();
@@ -9238,70 +9458,6 @@ function renderDataIntegrityReport ()
 		finishPortLet ();
 	}
 
-	// check 3.5: PortCompat
-	$orphans = array ();
-	$result = usePreparedSelectBlade
-	(
-		'SELECT PC.*, 1D.dict_value AS type1_name, 2D.dict_value AS type2_name ' .
-		'FROM PortCompat PC ' .
-		'LEFT JOIN Dictionary 1D ON PC.type1 = 1D.dict_key ' .
-		'LEFT JOIN Dictionary 2D ON PC.type2 = 2D.dict_key ' .
-		'WHERE 1D.dict_key IS NULL OR 2D.dict_key IS NULL'
-	);
-	$orphans = $result->fetchAll (PDO::FETCH_ASSOC);
-	unset ($result);
-	if (count ($orphans))
-	{
-		$violations = TRUE;
-		startPortlet ('Port Compatibility rules: Invalid From or To Type (' . count ($orphans) . ')');
-		echo "<table cellpadding=5 cellspacing=0 align=center class=cooltable>\n";
-		echo "<tr><th>From</th><th>From Type ID</th><th>To</th><th>To Type ID</th></tr>\n";
-		$order = 'odd';
-		foreach ($orphans as $orphan)
-		{
-			echo "<tr class=row_${order}>";
-			echo "<td>${orphan['type1_name']}</td>";
-			echo "<td>${orphan['type1']}</td>";
-			echo "<td>${orphan['type2_name']}</td>";
-			echo "<td>${orphan['type2']}</td>";
-			echo "</tr>\n";
-			$order = $nextorder[$order];
-		}
-		echo "</table>\n";
-		finishPortLet ();
-	}
-
-	// check 3.6: PortInterfaceCompat
-	$orphans = array ();
-	$result = usePreparedSelectBlade
-	(
-		'SELECT PIC.*, PII.iif_name ' .
-		'FROM PortInterfaceCompat PIC ' .
-		'LEFT JOIN PortInnerInterface PII ON PIC.iif_id = PII.id ' .
-		'LEFT JOIN Dictionary D ON PIC.oif_id = D.dict_key ' .
-		'WHERE D.dict_key IS NULL'
-	);
-	$orphans = $result->fetchAll (PDO::FETCH_ASSOC);
-	unset ($result);
-	if (count ($orphans))
-	{
-		$violations = TRUE;
-		startPortlet ('Enabled Port Types: Invalid Outer Interface (' . count ($orphans) . ')');
-		echo "<table cellpadding=5 cellspacing=0 align=center class=cooltable>\n";
-		echo "<tr><th>Inner Interface</th><th>Outer Interface ID</th></tr>\n";
-		$order = 'odd';
-		foreach ($orphans as $orphan)
-		{
-			echo "<tr class=row_${order}>";
-			echo "<td>${orphan['iif_name']}</td>";
-			echo "<td>${orphan['oif_id']}</td>";
-			echo "</tr>\n";
-			$order = $nextorder[$order];
-		}
-		echo "</table>\n";
-		finishPortLet ();
-	}
-
 	// check 4: relationships that violate ObjectParentCompat Rules
 	$invalids = array ();
 	$result = usePreparedSelectBlade
@@ -9344,15 +9500,15 @@ function renderDataIntegrityReport ()
 	$invalids = array ();
 	$result = usePreparedSelectBlade
 	(
-		'SELECT OA.id AS obja_id, OA.name AS obja_name, L.porta AS porta_id, PA.name AS porta_name, DA.dict_value AS porta_type, ' .
-		'OB.id AS objb_id, OB.name AS objb_name, L.portb AS portb_id, PB.name AS portb_name, DB.dict_value AS portb_type ' .
+		'SELECT OA.id AS obja_id, OA.name AS obja_name, L.porta AS porta_id, PA.name AS porta_name, POIA.oif_name AS porta_type, ' .
+		'OB.id AS objb_id, OB.name AS objb_name, L.portb AS portb_id, PB.name AS portb_name, POIB.oif_name AS portb_type ' .
 		'FROM Link L ' .
 		'LEFT JOIN Port PA ON L.porta = PA.id ' .
 		'LEFT JOIN Object OA ON PA.object_id = OA.id ' .
-		'LEFT JOIN Dictionary DA ON PA.type = DA.dict_key ' .
+		'LEFT JOIN PortOuterInterface POIA ON PA.type = POIA.id ' .
 		'LEFT JOIN Port PB ON L.portb = PB.id ' .
 		'LEFT JOIN Object OB ON PB.object_id = OB.id ' .
-		'LEFT JOIN Dictionary DB ON PB.type = DB.dict_key ' .
+		'LEFT JOIN PortOuterInterface POIB ON PB.type = POIB.id ' .
 		'LEFT JOIN PortCompat PC on PA.type = PC.type1 AND PB.type = PC.type2 ' .
 		'WHERE PC.type1 IS NULL OR PC.type2 IS NULL'
 	);
@@ -9547,7 +9703,10 @@ function renderDataIntegrityReport ()
 		'Port-FK-object_id' => 'Port',
 		'PortAllowedVLAN-FK-object-port' => 'PortAllowedVLAN',
 		'PortAllowedVLAN-FK-vlan_id' => 'PortAllowedVLAN',
+		'PortCompat-FK-oif_id1' => 'PortCompat',
+		'PortCompat-FK-oif_id2' => 'PortCompat',
 		'PortInterfaceCompat-FK-iif_id' => 'PortInterfaceCompat',
+		'PortInterfaceCompat-FK-oif_id' => 'PortInterfaceCompat',
 		'PortLog_ibfk_1' => 'PortLog',
 		'PortNativeVLAN-FK-compound' => 'PortNativeVLAN',
 		'PortVLANMode-FK-object-port' => 'PortVLANMode',
@@ -9730,6 +9889,374 @@ function renderUserProperties ($user_id)
 	echo "<tr><th class=submit colspan=2>";
 	printImageHREF ('SAVE', 'Save changes', TRUE, 102);
 	echo '</th></tr></table></form>';
+}
+
+function getPatchCableHeapCursorCode ($heap, $zoom_heap_id)
+{
+	global $pageno, $tabno;
+	if ($heap['logc'] == 0)
+		return '&nbsp;';
+	$linkparams = array
+	(
+		'page' => $pageno,
+		'tab' => $tabno,
+	);
+	if ($heap['id'] == $zoom_heap_id)
+	{
+		$imagename = 'Zooming';
+		$imagetext = 'hide event log';
+	}
+	else
+	{
+		$imagename = 'Zoom';
+		$imagetext = 'display event log';
+		$linkparams['zoom_heap_id'] = $heap['id'];
+	}
+	return '<a href="' . makeHref ($linkparams) . '">'  . getImageHREF ($imagename, $imagetext) . '</a>';
+}
+
+function renderPatchCableHeapSummary()
+{
+	$summary = getPatchCableHeapSummary();
+	if (! count ($summary))
+		return;
+	startPortlet ('Heaps');
+	global $nextorder;
+	echo '<br><table class=cooltable align=center border=0 cellpadding=5 cellspacing=0>';
+	echo '<tr><th>Amount</th><th>End 1</th><th>Cable type</th><th>End 2</th><th>Length</th><th>Description</th><th>&nbsp;</th></tr>';
+	$order = 'odd';
+	$zoom_heap_id = array_key_exists ('zoom_heap_id', $_REQUEST) ? genericAssertion ('zoom_heap_id', 'uint') : NULL;
+	foreach ($summary as $heap)
+	{
+		echo "<tr class=row_${order}>";
+		echo "<td class=tdright>${heap['amount']}</td>";
+		echo "<td class=tdleft>${heap['end1_connector']}</td>";
+		echo "<td class=tdleft>${heap['pctype']}</td>";
+		echo "<td class=tdleft>${heap['end2_connector']}</td>";
+		echo "<td class=tdright>${heap['length']}</td>";
+		echo "<td class=tdleft>${heap['description']}</td>";
+		echo '<td>' . getPatchCableHeapCursorCode ($heap, $zoom_heap_id) . '</td>';
+		echo '</tr>';
+		$order = $nextorder[$order];
+	}
+	echo '</table>';
+	finishPortlet();
+
+	if ($zoom_heap_id === NULL)
+		return;
+	if (! count ($eventlog = getPatchCableHeapLogEntries ($zoom_heap_id)))
+		return;
+	startPortlet ('Event log');
+	echo '<br><table class=cooltable align=center border=0 cellpadding=5 cellspacing=0>';
+	echo '<tr><th>Date</th><th>User</th><th>Message</th></tr>';
+	$order = 'odd';
+	foreach ($eventlog as $event)
+	{
+		echo "<tr class=row_${order}>";
+		echo "<td class=tdleft>${event['date']}</td>";
+		echo '<td class=tdleft>' . niftyString ($event['user'], 255) . '</td>';
+		echo '<td class=tdleft>' . niftyString ($event['message'], 255) . '</td>';
+		echo '</tr>';
+		$order = $nextorder[$order];
+	}
+	echo '</table>';
+	finishPortlet();
+}
+
+function renderPatchCableHeapEditor()
+{
+	function printNewitemTR()
+	{
+		printOpFormIntro ('add');
+		echo '<tr>';
+		echo '<td class=tdleft>' . getImageHREF ('create', 'create new', TRUE, 200) . '</td>';
+		echo "<td>&nbsp;</td>";
+		echo '<td>' . getSelect (getPatchCableConnectorOptions(), array ('name' => 'end1_conn_id', 'tabindex' => 110)) . '</td>';
+		echo '<td>' . getSelect (getPatchCableTypeOptions(), array ('name' => 'pctype_id', 'tabindex' => 120)) . '</td>';
+		echo '<td>' . getSelect (getPatchCableConnectorOptions(), array ('name' => 'end2_conn_id', 'tabindex' => 130)) . '</td>';
+		echo '<td><input type=text size=6 name=length value="1.00" tabindex=140></td>';
+		echo '<td><input type=text size=48 name=description tabindex=150></td>';
+		echo '<td class=tdleft>' . getImageHREF ('create', 'create new', TRUE, 200) . '</td>';
+		echo '</tr></form>';
+	}
+	echo '<table class=widetable border=0 cellpadding=5 cellspacing=0 align=center>';
+	echo '<tr><th>&nbsp;</th><th>Amount</th><th>End 1</th><th>Cable type</th><th>End 2</th><th>Length</th><th>Description</th><th>&nbsp;</th></tr>';
+	if (getConfigVar ('ADDNEW_AT_TOP') == 'yes')
+		printNewitemTR();
+	foreach (getPatchCableHeapSummary() as $heap)
+	{
+		printOpFormIntro ('upd', array ('id' => $heap['id']));
+		echo '<tr>';
+		echo '<td>' . getOpLink (array ('op' => 'del', 'id' => $heap['id']), '', 'destroy', 'remove') . '</td>';
+		echo "<td class=tdright>${heap['amount']}</td>";
+		echo '<td>' . getSelect (getPatchCableConnectorOptions(), array ('name' => 'end1_conn_id'), $heap['end1_conn_id']) . '</td>';
+		echo '<td>' . getSelect (getPatchCableTypeOptions(), array ('name' => 'pctype_id'), $heap['pctype_id']) . '</td>';
+		echo '<td>' . getSelect (getPatchCableConnectorOptions(), array ('name' => 'end2_conn_id'), $heap['end2_conn_id']) . '</td>';
+		echo "<td><input type=text size=6 name=length value='${heap['length']}'></td>";
+		echo '<td><input type=text size=48 name=description value="' . niftyString ($heap['description'], 255) . '"></td>';
+		echo '<td>' . getImageHREF ('save', 'Save changes', TRUE) . '</td>';
+		echo '</tr>';
+		echo '</form>';
+	}
+	if (getConfigVar ('ADDNEW_AT_TOP') != 'yes')
+		printNewitemTR();
+	echo '</table>';
+}
+
+function renderPatchCableHeapAmount()
+{
+	echo '<table class=widetable border=0 cellpadding=5 cellspacing=0 align=center>';
+	echo '<tr><th colspan=3>Amount</th><th>End 1</th><th>Cable type</th><th>End 2</th><th>Length</th><th>Description</th><th>&nbsp;</th></tr>';
+	foreach (getPatchCableHeapSummary() as $heap)
+	{
+		printOpFormIntro ('set', array ('id' => $heap['id']));
+		echo '<tr>';
+		echo '<td>';
+		if ($heap['amount'] > 0)
+			echo getOpLink (array ('op' => 'dec', 'id' => $heap['id']), '', 'delete', 'consume');
+		else
+			echo getImageHREF ('nodelete');
+		echo '</td>';
+		echo "<td><input type=text size=7 name=amount value='${heap['amount']}'></td>";
+		echo '<td>' . getOpLink (array ('op' => 'inc', 'id' => $heap['id']), '', 'add', 'replenish') . '</td>';
+		echo '<td>' . niftyString ($heap['end1_connector'], 32) . '</td>';
+		echo '<td>' . niftyString ($heap['pctype'], 255) . '</td>';
+		echo '<td>' . niftyString ($heap['end2_connector'], 32) . '</td>';
+		echo "<td class=tdright>${heap['length']}</td>";
+		echo '<td>' . niftyString ($heap['description'], 255) . '</td>';
+		echo '<td>' . getImageHREF ('save', 'Save changes', TRUE) . '</td>';
+		echo '</tr></form>';
+	}
+	echo '</table>';
+}
+
+function renderSimpleTableWithOriginViewer ($rows, $column)
+{
+	echo '<table class=widetable border=0 cellpadding=5 cellspacing=0 align=center>';
+	echo "<tr><th>Origin</th><th>Key</th><th>${column['header']}</th></tr>";
+	foreach ($rows as $row)
+	{
+		echo '<tr>';
+		echo '<td>';
+		if ($row['origin'] == 'default')
+			echo getImageHREF ('computer', 'default');
+		else
+			echo getImageHREF ('favorite', 'custom');
+		echo '</td>';
+		echo "<td class=tdright>${row[$column['key']]}</td>";
+		echo '<td class=tdleft>' . niftyString ($row[$column['value']], $column['width']) . '</td>';
+		echo '</tr>';
+	}
+	echo '</table>';
+}
+
+function renderSimpleTableWithOriginEditor ($rows, $column)
+{
+	function printNewitemTR ($column)
+	{
+		printOpFormIntro ('add');
+		echo '<tr>';
+		echo '<td>&nbsp;</td>';
+		echo '<td class=tdleft>' . getImageHREF ('create', 'create new', TRUE, 200) . '</td>';
+		echo "<td><input type=text size=${column['width']} name=${column['value']} tabindex=100></td>";
+		echo '<td class=tdleft>' . getImageHREF ('create', 'create new', TRUE, 200) . '</td>';
+		echo '</tr></form>';
+	}
+	echo '<table class=widetable border=0 cellpadding=5 cellspacing=0 align=center>';
+	echo "<tr><th>Origin</th><th>&nbsp;</th><th>${column['header']}</th><th>&nbsp;</th></tr>";
+	if (getConfigVar ('ADDNEW_AT_TOP') == 'yes')
+		printNewitemTR ($column);
+	foreach ($rows as $row)
+	{
+		echo '<tr>';
+		if ($row['origin'] == 'default')
+		{
+			echo '<td>' . getImageHREF ('computer', 'default') . '</td>';
+			echo '<td>&nbsp;</td>';
+			echo '<td>' . niftyString ($row[$column['value']], $column['width']) . '</td>';
+			echo '<td>&nbsp;</td>';
+		}
+		else
+		{
+			printOpFormIntro ('upd', array ($column['key'] => $row[$column['key']]));
+			echo '<td>' . getImageHREF ('favorite', 'custom') . '</td>';
+			echo '<td>' . getOpLink (array ('op' => 'del', $column['key'] => $row[$column['key']]), '', 'destroy', 'remove') . '</td>';
+			echo "<td><input type=text size=${column['width']} name=${column['value']} value='" . niftyString ($row[$column['value']], $column['width']) . "'></td>";
+			echo '<td>' . getImageHREF ('save', 'Save changes', TRUE) . '</td>';
+			echo '</form>';
+		}
+		echo '</tr>';
+	}
+	if (getConfigVar ('ADDNEW_AT_TOP') != 'yes')
+		printNewitemTR ($column);
+	echo '</table>';
+}
+
+function renderPatchCableConfiguration()
+{
+	global $nextorder;
+
+	echo '<table class=objview border=0 width="100%"><tr><td class=pcleft>';
+
+	startPortlet ('Connectors');
+	renderSimpleTableWithOriginViewer
+	(
+		getPatchCableConnectorList(),
+		array
+		(
+			'header' => 'Connector',
+			'key' => 'id',
+			'value' => 'connector',
+			'width' => 32,
+		)
+	);
+	finishPortlet();
+
+	startPortlet ('Connector compatibility');
+	renderTwoColumnCompatTableViewer
+	(
+		getPatchCableConnectorCompat(),
+		array
+		(
+			'header' => 'Cable type',
+			'key' => 'pctype_id',
+			'value' => 'pctype',
+			'width' => 64,
+		),
+		array
+		(
+			'header' => 'Connector',
+			'key' => 'connector_id',
+			'value' => 'connector',
+			'width' => 32,
+		)
+	);
+	finishPortlet();
+
+	echo '</td><td class=pcright>';
+
+	startPortlet ('Cable types');
+	renderSimpleTableWithOriginViewer
+	(
+		getPatchCableTypeList(),
+		array
+		(
+			'header' => 'Cable type',
+			'key' => 'id',
+			'value' => 'pctype',
+			'width' => 64,
+		)
+	);
+	finishPortlet();
+
+	startPortlet ('Cable types and port outer interfaces');
+	renderTwoColumnCompatTableViewer
+	(
+		getPatchCableOIFCompat(),
+		array
+		(
+			'header' => 'Cable type',
+			'key' => 'pctype_id',
+			'value' => 'pctype',
+			'width' => 64,
+		),
+		array
+		(
+			'header' => 'Outer interface',
+			'key' => 'oif_id',
+			'value' => 'oif_name',
+			'width' => 48,
+		)
+	);
+	finishPortlet();
+
+	echo '</td></tr></table>';
+}
+
+function renderPatchCableConnectorEditor()
+{
+	echo '<br>';
+	renderSimpleTableWithOriginEditor
+	(
+		getPatchCableConnectorList(),
+		array
+		(
+			'header' => 'Connector',
+			'key' => 'id',
+			'value' => 'connector',
+			'width' => 32,
+		)
+	);
+	echo '<br>';
+}
+
+function renderPatchCableTypeEditor()
+{
+	echo '<br>';
+	renderSimpleTableWithOriginEditor
+	(
+		getPatchCableTypeList(),
+		array
+		(
+			'header' => 'Cable type',
+			'key' => 'id',
+			'value' => 'pctype',
+			'width' => 64,
+		)
+	);
+	echo '<br>';
+}
+
+function renderPatchCableConnectorCompatEditor()
+{
+	echo '<br>';
+	renderTwoColumnCompatTableEditor
+	(
+		getPatchCableConnectorCompat(),
+		array
+		(
+			'header' => 'Cable type',
+			'key' => 'pctype_id',
+			'value' => 'pctype',
+			'width' => 64,
+			'options' => getPatchCableTypeOptions(),
+		),
+		array
+		(
+			'header' => 'Connector',
+			'key' => 'connector_id',
+			'value' => 'connector',
+			'width' => 32,
+			'options' => getPatchCableConnectorOptions()
+		)
+	);
+	echo '<br>';
+}
+
+function renderPatchCableOIFCompatEditor()
+{
+	echo '<br>';
+	renderTwoColumnCompatTableEditor
+	(
+		getPatchCableOIFCompat(),
+		array
+		(
+			'header' => 'Cable type',
+			'key' => 'pctype_id',
+			'value' => 'pctype',
+			'width' => 64,
+			'options' => getPatchCableTypeOptions(),
+		),
+		array
+		(
+			'header' => 'Outer interface',
+			'key' => 'oif_id',
+			'value' => 'oif_name',
+			'width' => 48,
+			'options' => getPortOIFOptions()
+		)
+	);
+	echo '<br>';
 }
 
 ?>

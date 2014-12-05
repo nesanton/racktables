@@ -470,7 +470,7 @@ function queryLDAPServer ($username, $password)
 	if(extension_loaded('ldap') === FALSE)
 		throw new RackTablesError ('LDAP misconfiguration. LDAP PHP Module is not installed.', RackTablesError::MISCONFIGURED);
 
-	$connect = @ldap_connect ($LDAP_options['server']);
+	$connect = @ldap_connect ($LDAP_options['server'], array_fetch ($LDAP_options, 'port', 389));
 	if ($connect === FALSE)
 		return array ('result' => 'CAN');
 
@@ -570,10 +570,11 @@ function queryLDAPServer ($username, $password)
 		ldap_free_result ($results);
 		$space = '';
 		foreach (explode (' ', $LDAP_options['displayname_attrs']) as $attr)
-		{
-			$ret['displayed_name'] .= $space . $info[0][$attr][0];
-			$space = ' ';
-		}
+			if (isset ($info[0][$attr]))
+			{
+				$ret['displayed_name'] .= $space . $info[0][$attr][0];
+				$space = ' ';
+			}
 		// Pull group membership, if any was returned.
 		if (isset ($info[0][$LDAP_options['group_attr']]))
 			for ($i = 0; $i < $info[0][$LDAP_options['group_attr']]['count']; $i++)

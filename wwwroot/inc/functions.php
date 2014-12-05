@@ -35,7 +35,6 @@ $templateWidth[4] = 1;
 $templateWidth[5] = 1;
 
 define ('CHAP_OBJTYPE', 1);
-define ('CHAP_PORTTYPE', 2);
 // The latter matches both SunOS and Linux-styled formats.
 define ('RE_L2_IFCFG', '/^[0-9a-f]{1,2}(:[0-9a-f]{1,2}){5}$/i');
 define ('RE_L2_CISCO', '/^[0-9a-f]{4}(\.[0-9a-f]{4}){2}$/i');
@@ -278,6 +277,10 @@ function genericAssertion ($argname, $argtype)
 		return assertUIntArg ($argname);
 	case 'uint0':
 		return assertUIntArg ($argname, TRUE);
+	case 'decimal':
+		if (! preg_match ('/^\d+(\.\d+)?$/', assertStringArg ($argname)))
+			throw new InvalidRequestArgException ($argname, $sic[$argname], 'format error');
+		return $sic[$argname];
 	case 'inet':
 		return assertIPArg ($argname);
 	case 'inet4':
@@ -866,7 +869,7 @@ function ip6_mask ($prefix_len)
 // in the provided string, an empty string for an empty string or raise an exception.
 function l2addressForDatabase ($string)
 {
-	$string = strtoupper ($string);
+	$string = strtoupper (trim ($string));
 	$ret = '';
 	switch (TRUE)
 	{
@@ -2052,29 +2055,22 @@ function iptree_fill (&$netdata)
 {
 	if (!isset ($netdata['kids']) or !count ($netdata['kids']))
 		return;
-	// If we really have nested prefixes, they must fit into the tree.
-	$worktree = $netdata;
-	foreach ($netdata['kids'] as $pfx)
-		iptree_embed ($worktree, $pfx);
-	$netdata['kids'] = iptree_construct ($worktree);
-	$netdata['kidc'] = count ($netdata['kids']);
-}
 
-function iptree_construct ($node)
-{
-	$self = __FUNCTION__;
-
-	if (isset ($node['right']))
-		return array_merge ($self ($node['left']), $self ($node['right']));
-	else
+	foreach ($netdata['spare_ranges'] as $mask => $list)
 	{
-		if (!isset ($node['kids']))
-		{
-			$node['kids'] = array();
-			$node['kidc'] = 0;
-			$node['name'] = '';
-		}
-		return array ($node);
+		$spare_mask = $mask;
+		// align spare IPv6 nets by nibble boundary
+		if (strlen ($netdata['ip_bin']) == 16 && $mask % 4)
+			$spare_mask = $mask + 4 - ($mask % 4);
+		foreach ($list as $ip_bin)
+			foreach (splitNetworkByMask (constructIPRange ($ip_bin, $mask), $spare_mask) as $spare)
+				$netdata['kids'][] = $spare + array('kids' => array(), 'kidc' => 0, 'name' => '');
+	}
+
+	if (count ($netdata['kids']) != $netdata['kidc'])
+	{
+		$netdata['kidc'] = count ($netdata['kids']);
+		usort ($netdata['kids'], 'IPNetworkCmp');
 	}
 }
 
@@ -2492,34 +2488,6 @@ function constructIPAddress ($ip_bin)
 			)
 		);
 	return $ret;
-}
-
-function iptree_embed (&$node, $pfx)
-{
-	$self = __FUNCTION__;
-
-	// hit?
-	if (0 == IPNetworkCmp ($node, $pfx))
-	{
-		$node = $pfx;
-		return;
-	}
-	if ($node['mask'] == $pfx['mask'])
-		throw new RackTablesError ('the recurring loop lost control', RackTablesError::INTERNAL);
-
-	// split?
-	if (!isset ($node['right']))
-	{
-		$node['left']  = constructIPRange ($node['ip_bin'], $node['mask'] + 1);
-		$node['right'] = constructIPRange (ip_last ($node), $node['mask'] + 1);
-	}
-
-	if (IPNetContainsOrEqual ($node['left'], $pfx))
-		$self ($node['left'], $pfx);
-	elseif (IPNetContainsOrEqual ($node['right'], $pfx))
-		$self ($node['right'], $pfx);
-	else
-		throw new RackTablesError ('cannot decide between left and right', RackTablesError::INTERNAL);
 }
 
 function treeApplyFunc (&$tree, $func = '', $stopfunc = '')
@@ -6148,6 +6116,57 @@ function compileExpression ($code, $do_cache_lookup = TRUE)
 		$ret = $parse['load'];
 	$exprCache[$code] = $ret;
 	return $ret;
+}
+
+// a caching wrapper around detectDeviceBreed and shortenIfName
+function shortenPortName ($if_name, $object_id)
+{
+	static $breed_cache = array();
+	if (! array_key_exists($object_id, $breed_cache))
+		$breed_cache[$object_id] = detectDeviceBreed ($object_id);
+	$breed = $breed_cache[$object_id];
+	return $breed == '' ? $if_name : shortenIfName ($if_name, $breed);
+}
+
+// returns an array of IP ranges of size $dst_mask > $netinfo['mask'], or array ($netinfo)
+function splitNetworkByMask ($netinfo, $dst_mask)
+{
+	$self = __FUNCTION__;
+    if ($netinfo['mask'] >= $dst_mask)
+        return array ($netinfo);
+
+    return array_merge (
+        $self (constructIPRange ($netinfo['ip_bin'], $netinfo['mask'] + 1), $dst_mask),
+        $self (constructIPRange (ip_last ($netinfo), $netinfo['mask'] + 1), $dst_mask)
+    );
+}
+
+// this function is used both to remember and to retrieve the last created entity's ID
+// it stores given id in the static var, and returns the stored value is called without args
+// used in plugins to make additional work on created entity in the chained ophandler
+// returns an array of realm-ID pairs
+function lastCreated ($realm = NULL, $id = NULL)
+{
+	static $last_ids = array();
+	if (isset ($realm) && isset ($id))
+		$last_ids[] = array('realm' => $realm, 'id' => $id);
+	return $last_ids;
+}
+
+// returns last id of a given type from lastCreated() result array
+function getLastCreatedId ($realm)
+{
+	foreach (array_reverse (lastCreated()) as $item)
+		if ($item['realm'] == $realm)
+			return $item['id'];
+}
+
+function formatPatchCableHeapAsPlainText ($heap)
+{
+	$text = "${heap['amount']} pcs: [${heap['end1_connector']}] ${heap['pctype']} [${heap['end2_connector']}]";
+	if ($heap['description'] != '')
+		$text .=  " (${heap['description']})";
+	return niftyString ($text, 512);
 }
 
 ?>

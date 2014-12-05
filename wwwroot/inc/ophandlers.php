@@ -252,6 +252,16 @@ $opspec_list['portmap-edit-del'] = array
 		array ('url_argname' => 'type2', 'assertion' => 'uint'),
 	),
 );
+$opspec_list['portifcompat-edit-add'] = array
+(
+	'table' => 'PortInterfaceCompat',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'iif_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'oif_id', 'assertion' => 'uint'),
+	),
+);
 $opspec_list['portifcompat-edit-del'] = array
 (
 	'table' => 'PortInterfaceCompat',
@@ -260,6 +270,37 @@ $opspec_list['portifcompat-edit-del'] = array
 	(
 		array ('url_argname' => 'iif_id', 'assertion' => 'uint'),
 		array ('url_argname' => 'oif_id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['portoifs-edit-add'] = array
+(
+	'table' => 'PortOuterInterface',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'oif_name', 'assertion' => 'string'),
+	),
+);
+$opspec_list['portoifs-edit-del'] = array
+(
+	'table' => 'PortOuterInterface',
+	'action' => 'DELETE',
+	'arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['portoifs-edit-upd'] = array
+(
+	'table' => 'PortOuterInterface',
+	'action' => 'UPDATE',
+	'set_arglist' => array
+	(
+		array ('url_argname' => 'oif_name', 'assertion' => 'string'),
+	),
+	'where_arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
 	),
 );
 $opspec_list['attrs-editmap-del'] = array
@@ -552,6 +593,154 @@ $opspec_list['munin-servers-upd'] = array
 	'where_arglist' => array
 	(
 		array ('url_argname' => 'id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['cables-heaps-add'] = array
+(
+	'table' => 'PatchCableHeap',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'end1_conn_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'pctype_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'end2_conn_id', 'assertion' => 'uint'),
+		array ('fix_argname' => 'amount', 'fix_argvalue' => 0),
+		array ('url_argname' => 'length', 'assertion' => 'decimal'),
+		array ('url_argname' => 'description', 'assertion' => 'string0'),
+	),
+);
+$opspec_list['cables-heaps-del'] = array
+(
+	'table' => 'PatchCableHeap',
+	'action' => 'DELETE',
+	'arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['cables-heaps-upd'] = array
+(
+	'table' => 'PatchCableHeap',
+	'action' => 'UPDATE',
+	'set_arglist' => array
+	(
+		array ('url_argname' => 'end1_conn_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'pctype_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'end2_conn_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'length', 'assertion' => 'decimal'),
+		array ('url_argname' => 'description', 'assertion' => 'string0'),
+	),
+	'where_arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['cableconf-connectors-add'] = array
+(
+	'table' => 'PatchCableConnector',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'connector', 'assertion' => 'string'),
+		array ('fix_argname' => 'origin', 'fix_argvalue' => 'custom'),
+	),
+);
+$opspec_list['cableconf-connectors-del'] = array
+(
+	'table' => 'PatchCableConnector',
+	'action' => 'DELETE',
+	'arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
+		array ('fix_argname' => 'origin', 'fix_argvalue' => 'custom'),
+	),
+);
+$opspec_list['cableconf-connectors-upd'] = array
+(
+	'table' => 'PatchCableConnector',
+	'action' => 'UPDATE',
+	'set_arglist' => array
+	(
+		array ('url_argname' => 'connector', 'assertion' => 'string'),
+	),
+	'where_arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
+		array ('fix_argname' => 'origin', 'fix_argvalue' => 'custom'),
+	),
+);
+$opspec_list['cableconf-cabletypes-add'] = array
+(
+	'table' => 'PatchCableType',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'pctype', 'assertion' => 'string'),
+		array ('fix_argname' => 'origin', 'fix_argvalue' => 'custom'),
+	),
+);
+$opspec_list['cableconf-cabletypes-del'] = array
+(
+	'table' => 'PatchCableType',
+	'action' => 'DELETE',
+	'arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
+		array ('fix_argname' => 'origin', 'fix_argvalue' => 'custom'),
+	),
+);
+$opspec_list['cableconf-cabletypes-upd'] = array
+(
+	'table' => 'PatchCableType',
+	'action' => 'UPDATE',
+	'set_arglist' => array
+	(
+		array ('url_argname' => 'pctype', 'assertion' => 'string'),
+	),
+	'where_arglist' => array
+	(
+		array ('url_argname' => 'id', 'assertion' => 'uint'),
+		array ('fix_argname' => 'origin', 'fix_argvalue' => 'custom'),
+	),
+);
+$opspec_list['cableconf-conncompat-add'] = array
+(
+	'table' => 'PatchCableConnectorCompat',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'pctype_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'connector_id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['cableconf-conncompat-del'] = array
+(
+	'table' => 'PatchCableConnectorCompat',
+	'action' => 'DELETE',
+	'arglist' => array
+	(
+		array ('url_argname' => 'pctype_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'connector_id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['cableconf-oifcompat-add'] = array
+(
+	'table' => 'PatchCableOIFCompat',
+	'action' => 'INSERT',
+	'arglist' => array
+	(
+		array ('url_argname' => 'pctype_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'oif_id', 'assertion' => 'uint'),
+	),
+);
+$opspec_list['cableconf-oifcompat-del'] = array
+(
+	'table' => 'PatchCableOIFCompat',
+	'action' => 'DELETE',
+	'arglist' => array
+	(
+		array ('url_argname' => 'pctype_id', 'assertion' => 'uint'),
+		array ('url_argname' => 'oif_id', 'assertion' => 'uint'),
 	),
 );
 
@@ -940,11 +1129,10 @@ function updateUser ()
 	genericAssertion ('user_id', 'uint');
 	$username = assertStringArg ('username');
 	assertStringArg ('realname', TRUE);
-	$new_password = assertStringArg ('password');
+	$new_password = assertStringArg ('password', TRUE);
 	$userinfo = spotEntity ('user', $_REQUEST['user_id']);
-	// Update user password only if provided password is not the same as current password hash.
-	if ($new_password != $userinfo['user_password_hash'])
-		$new_password = sha1 ($new_password);
+	// Set new password only if provided.
+	$new_password = mb_strlen ($new_password) ? sha1 ($new_password) : $userinfo['user_password_hash'];
 	commitUpdateUserAccount ($_REQUEST['user_id'], $username, $_REQUEST['realname'], $new_password);
 	// if user account renaming is being performed, change key value in UserConfig table
 	if ($userinfo['user_name'] !== $username)
@@ -1415,9 +1603,7 @@ function resetUIConfig()
 	setConfigVar ('SYNCDOMAIN_MAX_PROCESSES', '0');
 	setConfigVar ('PORT_EXCLUSION_LISTSRC', '{$typeid_3} or {$typeid_10} or {$typeid_11} or {$typeid_1505} or {$typeid_1506}');
 	setConfigVar ('FILTER_RACKLIST_BY_TAGS', 'yes');
-	setConfigVar ('SSH_OBJS_LISTSRC', 'false');
-	setConfigVar ('RDP_OBJS_LISTSRC', 'false');
-	setConfigVar ('TELNET_OBJS_LISTSRC', 'false');
+	setConfigVar ('MGMT_PROTOS', 'ssh: {$typeid_4}; telnet: {$typeid_8}');
 	setConfigVar ('SYNC_802Q_LISTSRC', '');
 	setConfigVar ('QUICK_LINK_PAGES', 'depot,ipv4space,rackspace');
 	setConfigVar ('CACTI_LISTSRC', 'false');
@@ -1531,6 +1717,7 @@ function addVService ()
 		)
 	);
 	$vs_id = lastInsertID();
+	lastCreated ('ipv4vs', $vs_id);
 	if (isset ($_REQUEST['taglist']))
 		produceTagsForNewRecord ('ipv4vs', $_REQUEST['taglist'], $vs_id);
 	$vsinfo = spotEntity ('ipv4vs', $vs_id);
@@ -1542,6 +1729,7 @@ function addVSG ()
 	$name = assertStringArg ('name');
 	usePreparedInsertBlade ('VS', array ('name' => $name));
 	$vs_id = lastInsertID();
+	lastCreated ('ipvs', $vs_id);
 	if (isset ($_REQUEST['taglist']))
 		produceTagsForNewRecord ('ipvs', $_REQUEST['taglist'], $vs_id);
 	$vsinfo = spotEntity ('ipvs', $vs_id);
@@ -2266,7 +2454,6 @@ function addRack ()
 		assertUIntArg ('height1');
 		assertStringArg ('asset_no', TRUE);
 		$rack_id = commitAddObject ($_REQUEST['name'], NULL, 1560, $_REQUEST['asset_no'], $taglist);
-		produceTagsForNewRecord ('rack', $taglist, $rack_id);
 
 		// Set the height and sort order
 		commitUpdateAttrValue ($rack_id, 27, $_REQUEST['height1']);
@@ -2295,7 +2482,6 @@ function addRack ()
 		foreach ($names2 as $cname)
 		{
 			$rack_id = commitAddObject ($cname, NULL, 1560, NULL, $taglist);
-			produceTagsForNewRecord ('rack', $taglist, $rack_id);
 
 			// Set the height and sort order
 			commitUpdateAttrValue ($rack_id, 27, $_REQUEST['height2']);
@@ -2544,15 +2730,6 @@ function updateFileText ()
 	showFuncMessage (__FUNCTION__, 'OK', array (htmlspecialchars ($shortInfo['name'])));
 }
 
-$msgcode['addIIFOIFCompat']['OK'] = 48;
-function addIIFOIFCompat ()
-{
-	assertUIntArg ('iif_id');
-	assertUIntArg ('oif_id');
-	commitSupplementPIC ($_REQUEST['iif_id'], $_REQUEST['oif_id']);
-	showFuncMessage (__FUNCTION__, 'OK');
-}
-
 $msgcode['addIIFOIFCompatPack']['OK'] = 37;
 function addIIFOIFCompatPack ()
 {
@@ -2677,12 +2854,14 @@ function createVLANDomain ()
 			'description' => $sic['vdom_descr'],
 		)
 	);
+	$domain_id = lastInsertID();
+	lastCreated ('vdom', $domain_id);
 	usePreparedInsertBlade
 	(
 		'VLANDescription',
 		array
 		(
-			'domain_id' => lastInsertID(),
+			'domain_id' => $domain_id,
 			'vlan_id' => VLAN_DFL_ID,
 			'vlan_type' => 'compulsory',
 			'vlan_descr' => 'default',
@@ -3404,7 +3583,30 @@ function tableHandler()
 	switch ($opspec['action'])
 	{
 	case 'INSERT':
+		switch ($opspec['table'])
+		{
+			case 'Attribute':
+				$realm = 'attr';
+				break;
+			case 'Chapter':
+				$realm = 'chapter';
+				break;
+			case 'Dictionary':
+				$realm = 'dict';
+				break;
+			case 'TagTree':
+				$realm = 'tag';
+				break;
+			case 'VLANSwitchTemplate':
+				$realm = 'vst';
+				break;
+			default:
+				$realm = NULL;
+		}
 		usePreparedInsertBlade ($opspec['table'], buildOpspecColumns ($opspec, 'arglist'));
+		if (isset ($realm))
+			lastCreated ($realm, lastInsertID());
+
 		$retcode = 48;
 		break;
 	case 'DELETE':
@@ -3443,8 +3645,7 @@ function updateFile ()
 	(
 		'File',
 		array ('name' => $file_name, 'type' => $file_type, 'comment' => $file_comment),
-		array ('id' => $file_id),
-		array_key_exists ('conjunction', $opspec) ? $opspec['conjunction'] : 'AND'
+		array ('id' => $file_id)
 	);
 	rebuildTagChainForEntity ('file', $file_id, buildTagChainFromIds ($taglist), TRUE);
 	showFuncMessage (__FUNCTION__, 'OK', array ($file_name));
@@ -3497,7 +3698,7 @@ function updIPv4RSP ()
 	usePreparedUpdateBlade
 	(
 		"IPv4RSPool",
-		array ('name' => $name, 'vsconfig' => $comment, 'rsconfig' => $vsconfig),
+		array ('name' => $name, 'vsconfig' => $vsconfig, 'rsconfig' => $rsconfig),
 		array ('id' => $rspool_id)
 	);
 	rebuildTagChainForEntity ('ipv4rspool', $rspool_id, buildTagChainFromIds ($taglist), TRUE);
@@ -3513,6 +3714,48 @@ function editUserProperties ()
 	$user = spotEntity ('user', $user_id);
 	print_r($user);
 	showFuncMessage (__FUNCTION__, 'OK', array($user['user_name']));
+}
+
+function renameObjectPorts()
+{
+	$object_id = getBypassValue();
+	$n = 0;
+	foreach (getObjectPortsAndLinks ($object_id) as $port)
+	{
+		$canon_pn = shortenPortName ($port['name'], $port['object_id']);
+		if ($canon_pn != $port['name'])
+		{
+			commitUpdatePort ($object_id, $port['id'], $canon_pn, $port['oif_id'], $port['label'], $port['l2address'], $port['reservation_comment']);
+			$n++;
+		}
+	}
+	if ($n)
+		showSuccess ("Renamed $n ports");
+	else
+		showNotice ("Nothing renamed");
+}
+
+function consumePatchCable()
+{
+	if (commitModifyPatchCableAmount (genericAssertion ('id', 'uint'), -1))
+		showSuccess ('consumed OK');
+	else
+		showError ('could not consume');
+}
+
+function replenishPatchCable()
+{
+	if (commitModifyPatchCableAmount (genericAssertion ('id', 'uint'), 1))
+		showSuccess ('replenished OK');
+	else
+		showError ('could not replenish');
+}
+
+$msgcode['setPatchCableAmount']['OK'] = 51;
+function setPatchCableAmount()
+{
+	commitSetPatchCableAmount (genericAssertion ('id', 'uint'), genericAssertion ('amount', 'uint0'));
+	showFuncMessage (__FUNCTION__, 'OK');
 }
 
 ?>

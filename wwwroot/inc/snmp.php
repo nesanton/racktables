@@ -25,6 +25,15 @@ $iftable_processors['generic-fa-any-100TX'] = array
 	'try_next_proc' => FALSE,
 );
 
+$iftable_processors['generic-g12-and-g24-combo-1000SFP'] = array
+(
+	'pattern' => '@^g(12|24)$@',
+	'replacement' => 'g\\1',
+	'dict_key' => '4-1077',
+	'label' => 'g\\1',
+	'try_next_proc' => TRUE,
+);
+
 $iftable_processors['generic-g45-to-g48-combo-1000SFP'] = array
 (
 	'pattern' => '@^g(45|46|47|48)$@',
@@ -506,6 +515,15 @@ $iftable_processors['catalyst-stack-1-to-4-SFP'] = array
 	'pattern' => '@^GigabitEthernet(\d+)/(\d+)/([1-4])$@',
 	'replacement' => 'gi\\1/\\2/\\3',
 	'dict_key' => '4-1077',
+	'label' => 'unit \\1 port \\3',
+	'try_next_proc' => FALSE,
+);
+
+$iftable_processors['catalyst-stack-uplinks-10000SFP+'] = array
+(
+	'pattern' => '@^TenGigabitEthernet(\d+)/(\d+)/([1-4])$@',
+	'replacement' => 'te\\1/\\2/\\3',
+	'dict_key' => '9-1084',
 	'label' => 'unit \\1 port \\3',
 	'try_next_proc' => FALSE,
 );
@@ -2248,6 +2266,12 @@ $known_switches = array // key is system OID w/o "enterprises" prefix
 			'catalyst-chassis-mgmt',
 		),
 	),
+	'9.1.1245' => array
+	(
+		'dict_key' => 2211,
+		'text' => 'CGS-2520-24TC: 24 RJ-45/10-100T(X) + 2 combo gig',
+		'processors' => array ('catalyst-chassis-1-to-2-combo-1000SFP', 'catalyst-chassis-any-1000T', 'catalyst-chassis-any-100TX'),
+	),
 	'9.1.1257' => array
 	(
 		'dict_key' => 1391,
@@ -2289,6 +2313,27 @@ $known_switches = array // key is system OID w/o "enterprises" prefix
 		'dict_key' => 1903,
 		'text' => 'WS-C2960S-F48LPS-L: 48 RJ-45/10-100TX + 4 SFP/1000',
 		'processors' => array ('catalyst-stack-1-to-4-SFP', 'catalyst-chassis-mgmt', 'catalyst-stack-any-100TX'),
+	),
+	'9.1.1693' => array
+	(
+		'dict_key' => 2112,
+		'text' => 'WS-C2960X-24PD-L: 24 RJ-45/10-100-1000T(X) + 2 SFP+/10000',
+		'processors' => array ('catalyst-stack-uplinks-10000SFP+', 'catalyst-chassis-mgmt', 'catalyst-stack-any-1000T'),
+
+	),
+	'9.1.1697' => array
+	(
+		'dict_key' => 2117,
+		'text' => 'WS-C2960X-24PS-L: 24 RJ-45/10-100-1000T(X) + 4 SFP+/10000',
+		'processors' => array ('catalyst-stack-uplinks-10000SFP+', 'catalyst-chassis-mgmt', 'catalyst-stack-any-1000T'),
+
+	),
+	'9.1.1704' => array
+	(
+		'dict_key' => 2122,
+		'text' => 'WS-C2960X-24TS-LL: 24 RJ-45/10-100-1000T(X) + 2 SFP/1000',
+		'processors' => array ('catalyst-chassis-25-to-26-1000SFP', 'catalyst-chassis-mgmt', 'catalyst-chassis-any-1000T'),
+
 	),
 	'9.5.18' => array
 	(
@@ -2482,6 +2527,12 @@ $known_switches = array // key is system OID w/o "enterprises" prefix
 		'text' => 'J8692A: 20 RJ-45/10-100-1000T(X) + 4 combo-gig',
 		'processors' => array ('procurve-21-to-24-combo-1000SFP', 'procurve-chassis-1000T'),
 	),
+	'11.2.3.7.11.59' => array
+	(
+		'dict_key' => 877,
+		'text' => 'J8693A: 44 RJ-45/10-100-1000T(X) + 4 combo-gig',
+		'processors' => array ('procurve-45-to-48-combo-1000SFP', 'procurve-chassis-1000T'),
+	),
 	'11.2.3.7.11.62' => array
 	(
 		'dict_key' => 855,
@@ -2595,6 +2646,12 @@ $known_switches = array // key is system OID w/o "enterprises" prefix
 		'dict_key' => 1641,
 		'text' => 'J9452A: 48 RJ-45/10-100-1000T + 2 SFP-10000+',
 		'processors' => array ('procurve-49-to-52-10000SFP+', 'procurve-chassis-1000T'),
+	),
+	'11.2.3.7.11.154' => array
+	(
+		'dict_key' => 2213,
+		'text' => 'J9728A: 44 RJ-45/10-100-1000T + 4 combo-gig',
+		'processors' => array ('procurve-45-to-48-combo-1000SFP', 'procurve-chassis-1000T'),
 	),
 	'43.1.16.4.3.8' => array
 	(
@@ -2951,6 +3008,13 @@ $known_switches = array // key is system OID w/o "enterprises" prefix
 		'text' => 'Juniper EX4200 series',
 		'processors' => array ('juniper-ex-pic0-1000T', 'juniper-ex-mgmt'),
 	),
+	'3955.6.1.2024.1' => array
+	(
+		'dict_key' => 2212,
+		'text' => 'Linksys SRW2024P: 22 RJ-45/10-100-1000T(X) + 2 combo ports',
+		'processors' => array ('generic-g12-and-g24-combo-1000SFP', 'generic-g-any-1000T'),
+		'ifDescrOID' => 'ifName',
+	),
 	'3955.6.1.2048.1' => array
 	(
 		'dict_key' => 1624,
@@ -3109,7 +3173,7 @@ $swtype_pcre = array
 	'/Huawei Versatile Routing Platform Software.+VRP.+Software,\s*Version 5\.70 /is' => 1369,
 	'/Huawei Versatile Routing Platform Software.+VRP.+Software,\s*Version 5\.110 /is' => 2080,
 	'/Huawei Versatile Routing Platform Software.+VRP.+Software,\s*Version 5\.120 /is' => 2081,
-	'/Huawei Versatile Routing Platform Software.+VRP.+Software,\s*Version 8\.50 /is' => 2027,
+	'/Huawei Versatile Routing Platform Software.+VRP.+Software,\s*Version 8\./is' => 2027,
 	// FIXME: get sysDescr for IronWare 5 and add a pattern
 	'/^Brocade Communications Systems.+, IronWare Version 07\./' => 1364,
 	'/^Juniper Networks,.+JUNOS 9\./' => 1366,
@@ -3213,7 +3277,7 @@ function doSwitchSNMPmining ($objectInfo, $device)
 	$sysName = substr ($device->snmpget ('sysName.0'), strlen ('STRING: '));
 	$sysDescr = substr ($device->snmpget ('sysDescr.0'), strlen ('STRING: '));
 	$sysDescr = str_replace (array ("\n", "\r"), " ", $sysDescr);  // Make it one line
-	$ifDescr_tablename = (isset($known_switches[$sysObjectID]['ifDescrOID'])) ? $known_switches[$sysObjectID]['ifDescrOID'] : 'ifDescr';
+	$ifDescr_tablename = array_fetch ($known_switches[$sysObjectID], 'ifDescrOID', 'ifDescr');
 	showSuccess ($known_switches[$sysObjectID]['text']);
 	foreach (array_keys ($known_switches[$sysObjectID]['processors']) as $pkey)
 		if (!array_key_exists ($known_switches[$sysObjectID]['processors'][$pkey], $iftable_processors))
@@ -3303,10 +3367,12 @@ function doSwitchSNMPmining ($objectInfo, $device)
 			87 => '1-29',
 			94 => '1-29',
 			95 => '1-29',
+			154 => '1-29',
 			19 => '1-681', # DB-9 RS-232
 			31 => '1-681',
 			34 => '1-681',
 			58 => '1-681',
+			59 => '1-681',
 		);
 		if (array_key_exists ($matches[1], $console_per_product))
 		{
@@ -3447,7 +3513,7 @@ function doSwitchSNMPmining ($objectInfo, $device)
 	case preg_match ('/^674\.10895\.300(3|4|7|9)/', $sysObjectID):
 	case preg_match ('/^674\.10895\.301(0|4|7|9)/', $sysObjectID):
 	case preg_match ('/^674\.10895\.302(0|1|8)/', $sysObjectID):
-	case preg_match ('/^3955\.6\.1\.2048\.1/', $sysObjectID): // Linksys
+	case preg_match ('/^3955\.6\.1\.20(24|48)\.1/', $sysObjectID): // Linksys
 	case preg_match ('/^3955\.6\.50(24|48)/', $sysObjectID): // Linksys
 	case preg_match ('/^4526\.100\./', $sysObjectID): // NETGEAR (with console)
 	case preg_match ('/^11863\.1\.1\.1/', $sysObjectID): // TPLink
