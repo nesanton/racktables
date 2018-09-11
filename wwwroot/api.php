@@ -943,7 +943,7 @@ try {
                 assertUIntArg ('object_id');
 
                 // determine racks the object is in
-                $racklist = getResidentRackIDs ($_REQUEST['object_id'], FALSE);
+                $racklist = getResidentRackIDs ($_REQUEST['object_id']);
                 commitDeleteObject ($_REQUEST['object_id']);
 
                 foreach ($racklist as $rack_id)
