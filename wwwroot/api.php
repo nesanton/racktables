@@ -523,6 +523,24 @@ try {
                 break;
 
 
+        // add object log
+        //    UI equivalent: submitting form at /index.php?module=redirect&page=object&tab=log&op=add
+        //    UI handler: addObjectlog()
+        case 'add_object_log':
+        require_once 'inc/init.php';
+                genericAssertion ('object_id', 'uint0');
+                assertStringArg ('logentry', TRUE);
+                global $remote_username;
+
+                usePreparedExecuteBlade
+                  (
+                   'INSERT INTO ObjectLog SET object_id=?, user=?, date=NOW(), content=?',
+                  array ($_REQUEST['object_id'], $remote_username, $_REQUEST['logentry'])
+                  );
+                sendAPIResponse( array(), array( 'message' => 'log entry added successfully'));
+                break;
+
+
         // add one object
         //    UI equivalent: submitting form at /index.php?page=depot&tab=addmore
         //    UI handler: addMultipleObjects()
@@ -768,8 +786,8 @@ try {
                 break;
 
 
-        // update an object's IP address
-        //    UI equivalent: /index.php?page=   ?module=redirect&page=object&tab=ip&op=add
+        // update object's IP address
+        //    UI equivalent: /index.php?page=?module=redirect&page=object&tab=ip&op=add
         //    UI handler: addIPAllocation()
         case 'add_object_ip_allocation':
 		require_once 'inc/init.php';
@@ -799,6 +817,42 @@ try {
                 }
 
                 bindIPToObject ($ip_bin, $_REQUEST['object_id'], $_REQUEST['bond_name'], $_REQUEST['bond_type']);
+
+                redirectUser( $_SERVER['SCRIPT_NAME'] . '?method=get_object&object_id=' . $_REQUEST['object_id'] );
+                break;
+
+
+        // update object's IP address
+        //    UI equivalent: /index.php?page=?module=redirect&page=object&tab=ip&op=upd
+        //    UI handler:
+        case 'edit_object_ip_allocation':
+        require_once 'inc/init.php';
+
+                $ip_bin = assertIPArg ('ip');
+                assertUIntArg ('object_id');
+
+                // default value for bond_name
+                if ( ! isset ($_REQUEST['bond_name']) )
+                        $_REQUEST['bond_name'] = '';
+
+                // default value for bond_type
+                // note on meanings of on 'bond_type' values:
+                //     'regular': Connected
+                //     'virtual': Loopback
+                //     'shared':  Shared
+                //     'router':  Router
+                if ( ! isset ($_REQUEST['bond_type']) )
+                        $_REQUEST['bond_type'] = 'regular';
+
+                // confirm that a network exists that matches the IP address
+                if  (getConfigVar ('IPV4_JAYWALK') != 'yes' and NULL === getIPAddressNetworkId ($ip_bin)) 
+                {
+                        throw new InvalidRequestArgException ('ip',
+                                                              $_REQUEST['ip'],
+                                                              'no network covering the requested IP address');
+                }
+
+                updateIPBond ($ip_bin, $_REQUEST['object_id'], $_REQUEST['bond_name'], $_REQUEST['bond_type']);
 
                 redirectUser( $_SERVER['SCRIPT_NAME'] . '?method=get_object&object_id=' . $_REQUEST['object_id'] );
                 break;
@@ -861,6 +915,28 @@ try {
                 redirectUser( $_SERVER['SCRIPT_NAME'] . '?method=get_object&object_id=' . $_REQUEST['object_id'] );
                 break;
 
+
+        // update a port for an object
+        //    UI equivalent: /index.php?page=object&tab=ports&op=editPort
+        //    UI handler: editPort()
+        case 'update_port':
+          require_once 'inc/init.php';
+
+                assertUIntArg ('object_id');
+                assertUIntArg ('port_id');
+                assertStringArg ('port_name');
+                assertStringArg ('port_type_id');
+
+                commitUpdatePort($_REQUEST['object_id'],
+                                 $_REQUEST['port_id'],
+                                 $_REQUEST['port_name'],
+                                 $_REQUEST['port_type_id'],
+                                 $_REQUEST['port_label'],
+                                 $_REQUEST['port_l2address'],
+                                 $_REQUEST['port_reservation_comment']);
+
+                redirectUser( $_SERVER['SCRIPT_NAME'] . '?method=get_object&object_id=' . $_REQUEST['object_id'] );
+                break;
 
 
         // link a port
@@ -1061,9 +1137,24 @@ try {
                 usePreparedInsertBlade('Dictionary', array('chapter_id' => $_REQUEST['chapter_no'],
                                                            'dict_value' => $_REQUEST['dict_value']));
 
-                sendAPIResponse(array(), array('message' => 'dictionary entry added successfully',
-                                               'chapter_no' => $_REQUEST['chapter_no']));
+                                sendAPIResponse(array('message' => 'dictionary entry added successfully',
+                                                      'entry_id' => lastInsertID()));
                 break;
+
+
+        // add a tag
+        //    UI equivalent: http://racktables/index.php?module=redirect&page=tagtree&tab=edit&op=createTag
+        case 'add_tag':
+          require_once 'inc/init.php';
+
+                assertStringArg ('tag_name', TRUE);
+
+                usePreparedInsertBlade('TagTree', array('tag' => $_REQUEST['tag_name']));
+
+                sendAPIResponse(array('message' => 'tag added successfully',
+                                      'tag_id' => lastInsertID()));
+                break;
+
 
         // delete an entry from a chapter
         //    UI equivalent: /index.php?page=chapter&module=redirect&op=del&dict_key=50228&tab=edit&chapter_no=10007
